@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Système de Gestion d'Infrastructure Urbaine</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1>🏛️ Infrastructure Urbaine</h1>
+      <div class="nav-links">
+        <a href="#accueil">Accueil</a>
+        <a href="#api">API</a>
+        <a href="#documentation">Documentation</a>
+        <a href="/admin/" target="_blank">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenu principal -->
+  <div class="container">
+    <!-- Section Héro -->
+    <section class="hero" id="accueil">
+      <h2>🌆 Bienvenue sur le Système de Gestion d'Infrastructure Urbaine</h2>
+      <p>Une plateforme complète pour gérer et suivre les infrastructures municipales en temps réel</p>
+      <div style="margin-top: 2rem;">
+        <a href="#api" class="btn btn-primary">Découvrir l'API</a>
+        <a href="/admin/" class="btn btn-secondary" target="_blank">Accéder à l'Admin</a>
+      </div>
+    </section>
+
+    <!-- Statistiques -->
+    <section class="stats" id="stats">
+      <div class="stat-box">
+        <div class="stat-number" id="total-incidents">-</div>
+        <div class="stat-label">Incidents Total</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="resolved-incidents">-</div>
+        <div class="stat-label">Incidents Résolus</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="pending-interventions">-</div>
+        <div class="stat-label">Interventions en Attente</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="asset-availability">-</div>
+        <div class="stat-label">Taux de Disponibilité %</div>
+      </div>
+    </section>
+
+    <!-- Modules disponibles -->
+    <section class="section" id="modules">
+      <h2>📦 Modules Disponibles</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon">👥</div>
+          <h3>Gestion des Utilisateurs</h3>
+          <p>Gestion des comptes utilisateurs avec différents rôles (Citoyen, Agent, Manager, Décideur, Administrateur)</p>
+          <a href="/api/users/" class="btn btn-primary" style="width: 100%; margin-top: auto;">Accéder</a>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⚠️</div>
+          <h3>Signalements d'Incidents</h3>
+          <p>Système de signalement participatif pour que les citoyens reportent les anomalies urbaines</p>
+          <a href="/api/incidents/" class="btn btn-primary" style="width: 100%; margin-top: auto;">Accéder</a>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🏗️</div>
+          <h3>Patrimoine Urbain</h3>
+          <p>Inventaire et gestion des actifs urbains (lampadaires, bancs, signalisation, etc.)</p>
+          <a href="/api/assets/" class="btn btn-primary" style="width: 100%; margin-top: auto;">Accéder</a>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🔧</div>
+          <h3>Interventions Techniques</h3>
+          <p>Planification et suivi des interventions techniques sur le terrain</p>
+          <a href="/api/interventions/" class="btn btn-primary" style="width: 100%; margin-top: auto;">Accéder</a>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📊</div>
+          <h3>Rapports & KPI</h3>
+          <p>Tableau de bord avec indicateurs de performance et statistiques</p>
+          <a href="/api/reports/" class="btn btn-primary" style="width: 100%; margin-top: auto;">Accéder</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Accès rapides -->
+    <section class="section" id="acces-rapides">
+      <h2>🔑 Accès Rapides</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+          <h3 style="color: #333; margin-bottom: 0.5rem;">Admin Django</h3>
+          <p style="margin-bottom: 0.5rem;"><strong>URL:</strong> <a href="/admin/" target="_blank">/admin/</a></p>
+          <p style="margin-bottom: 0.5rem;"><strong>Identifiant:</strong> <code>admin</code></p>
+          <p><strong>Mot de passe:</strong> <code>admin123</code></p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+          <h3 style="color: #333; margin-bottom: 0.5rem;">Comptes de Test</h3>
+          <p style="margin-bottom: 0.3rem;"><strong>Citoyen:</strong> <code>citoyen1</code></p>
+          <p style="margin-bottom: 0.3rem;"><strong>Agent:</strong> <code>agent1</code></p>
+          <p style="margin-bottom: 0.3rem;"><strong>Manager:</strong> <code>manager1</code></p>
+          <p><strong>Mot de passe (tous):</strong> <code>password123</code></p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+          <h3 style="color: #333; margin-bottom: 0.5rem;">Base API</h3>
+          <p><code style="background: white; padding: 0.5rem; border-radius: 4px; display: block;">http://localhost:8000/api/</code></p>
+          <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">Authentification par Token</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- API Reference -->
+    <section class="section" id="api">
+      <h2>📡 Référence API</h2>
+      <div style="margin-bottom: 2rem;">
+        <h3 style="color: #0066cc; margin-bottom: 1rem;">Endpoints Principaux</h3>
+        <div class="api-endpoints">
+          <div class="endpoint-item">
+            <strong>Utilisateurs</strong><br>
+            <code>GET /api/users/users/</code> - Lister tous les utilisateurs<br>
+            <code>GET /api/users/users/me/</code> - Récupérer l'utilisateur connecté<br>
+            <code>POST /api/users/users/</code> - Créer un nouvel utilisateur
+          </div>
+
+          <div class="endpoint-item">
+            <strong>Incidents</strong><br>
+            <code>GET /api/incidents/incidents/</code> - Lister tous les incidents<br>
+            <code>POST /api/incidents/incidents/</code> - Créer un nouvel incident<br>
+            <code>GET /api/incidents/incidents/{id}/</code> - Détails d'un incident<br>
+            <code>POST /api/incidents/incidents/{id}/update_status/</code> - Mettre à jour le statut
+          </div>
+
+          <div class="endpoint-item">
+            <strong>Actifs Urbains</strong><br>
+            <code>GET /api/assets/assets/</code> - Lister tous les actifs<br>
+            <code>POST /api/assets/assets/</code> - Créer un nouvel actif<br>
+            <code>GET /api/assets/types/</code> - Types d'actifs disponibles
+          </div>
+
+          <div class="endpoint-item">
+            <strong>Interventions</strong><br>
+            <code>GET /api/interventions/interventions/</code> - Lister les interventions<br>
+            <code>POST /api/interventions/interventions/</code> - Créer une intervention<br>
+            <code>GET /api/interventions/interventions/my_interventions/</code> - Mes interventions
+          </div>
+
+          <div class="endpoint-item">
+            <strong>Rapports</strong><br>
+            <code>GET /api/reports/reports/global_statistics/</code> - Statistiques globales<br>
+            <code>GET /api/reports/reports/incidents_by_status/</code> - Incidents par statut<br>
+            <code>GET /api/reports/reports/kpi_summary/</code> - Résumé des KPI
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Documentation -->
+    <section class="section" id="documentation">
+      <h2>📚 Documentation</h2>
+      
+      <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Architecture</h3>
+      <p>Le système est construit avec une architecture 3-tiers moderne :</p>
+      <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+        <li><strong>Frontend:</strong> Interface web réactive (HTML/CSS/JavaScript)</li>
+        <li><strong>Backend:</strong> Django REST Framework pour l'API</li>
+        <li><strong>Base de données:</strong> SQLite (développement), configurable pour production</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Authentification</h3>
+      <p>L'API utilise l'authentification par Token. Incluez le header suivant :</p>
+      <code style="background: #f8f9fa; padding: 1rem; display: block; border-radius: 4px; margin-bottom: 1rem;">
+        Authorization: Token votre_token_ici
+      </code>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Modèles de données</h3>
+      <p><strong>Utilisateur:</strong> Username, Email, Rôle, Téléphone</p>
+      <p><strong>Incident:</strong> Titre, Description, Catégorie, Localisation GPS, Statut, Priorité</p>
+      <p><strong>Actif:</strong> Code unique, Type, Localisation, État, Date d'installation</p>
+      <p><strong>Intervention:</strong> Incident associé, Agent assigné, Date planifiée, Statut, Durée estimée</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Technologies</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Django 6.0.6</li>
+        <li>Django REST Framework 3.17</li>
+        <li>Python 3.14</li>
+        <li>SQLite 3</li>
+        <li>CORS Headers pour intégration frontend</li>
+      </ul>
+    </section>
+
+    <!-- Fonctionnalités clés -->
+    <section class="section" id="fonctionnalites">
+      <h2>✨ Fonctionnalités Clés</h2>
+      <div class="grid">
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #0066cc;">
+          <h4>Signalement Participatif</h4>
+          <p>Les citoyens peuvent signaler des anomalies avec photos et géolocalisation</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #28a745;">
+          <h4>Suivi en Temps Réel</h4>
+          <p>Suivez l'état de vos signalements en direct avec notifications</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #17a2b8;">
+          <h4>Gestion d'Équipes</h4>
+          <p>Attribution intelligente des interventions aux agents disponibles</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ffc107;">
+          <h4>Tableau de Bord KPI</h4>
+          <p>Indicateurs de performance pour les décideurs municipaux</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #dc3545;">
+          <h4>Inventaire Patrimoine</h4>
+          <p>Gestion complète du patrimoine urbain avec historique</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #6f42c1;">
+          <h4>Analyse Prédictive</h4>
+          <p>Détection d'anomalies et alertes basées sur les données historiques</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p><strong>Système de Gestion d'Infrastructure Urbaine</strong></p>
+    <p>Version 1.0 | Django 6.0.6 | API REST Framework</p>
+    <p style="margin-top: 1rem; color: #aaa; font-size: 0.9rem;">
+      Développé pour la gestion efficace des infrastructures municipales
+    </p>
+  </footer>
+
+  <script src="/static/js/api.js"></script>
+  <script>
+    // Charger les statistiques au chargement de la page
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const stats = await apiClient.getGlobalStatistics();
+        document.getElementById('total-incidents').textContent = stats.total_incidents;
+        document.getElementById('resolved-incidents').textContent = stats.resolved_incidents;
+        document.getElementById('pending-interventions').textContent = stats.total_interventions - stats.completed_interventions;
+        document.getElementById('asset-availability').textContent = stats.asset_availability_rate.toFixed(1);
+      } catch (error) {
+        console.log('Impossible de charger les statistiques (authentification requise)');
+      }
+    });
+  </script>
+</body>
+</html>
