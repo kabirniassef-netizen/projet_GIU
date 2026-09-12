@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from .models import AssetType, Asset, AssetHistory
 from .serializers import AssetTypeSerializer, AssetListSerializer, AssetDetailSerializer, AssetCreateSerializer, AssetHistorySerializer
+from urban_infrastructure.users.permissions import IsManagerOrAdmin
 
 
 class AssetTypeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -16,6 +17,11 @@ class AssetViewSet(viewsets.ModelViewSet):
     queryset = Asset.objects.all()
     serializer_class = AssetListSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsManagerOrAdmin()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':

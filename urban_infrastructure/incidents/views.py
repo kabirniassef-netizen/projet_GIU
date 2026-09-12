@@ -7,6 +7,7 @@ from .serializers import (
     IncidentCategorySerializer, IncidentListSerializer, IncidentDetailSerializer,
     IncidentCreateSerializer, IncidentUpdateSerializer
 )
+from urban_infrastructure.users.permissions import CanManageIncidents, IsManagerOrAdmin
 
 
 class IncidentCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -21,6 +22,18 @@ class IncidentViewSet(viewsets.ModelViewSet):
     queryset = Incident.objects.all()
     serializer_class = IncidentListSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == 'citizen' and not self.request.user.is_superuser:
+            return Incident.objects.filter(reporter=self.request.user)
+        return Incident.objects.all()
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsManagerOrAdmin()]
+        if self.action == 'update_status':
+            return [CanManageIncidents()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -70,9 +83,9 @@ class IncidentViewSet(viewsets.ModelViewSet):
         """Filtrer les incidents par statut"""
         status_filter = request.query_params.get('status')
         if status_filter:
-            incidents = Incident.objects.filter(status=status_filter)
+            incidents = self.get_queryset().filter(status=status_filter)
         else:
-            incidents = Incident.objects.all()
+            incidents = self.get_queryset()
         
         serializer = self.get_serializer(incidents, many=True)
         return Response(serializer.data)

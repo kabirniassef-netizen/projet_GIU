@@ -1,8 +1,8 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from urban_infrastructure.router import PublicAPIRootRouter
 from .views import KPIMetricsViewSet, ReportViewSet
 
-router = DefaultRouter()
+router = PublicAPIRootRouter()
 router.register(r'metrics', KPIMetricsViewSet)
 router.register(r'reports', ReportViewSet)
 
