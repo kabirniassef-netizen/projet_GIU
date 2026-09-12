@@ -1,11 +1,51 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from .models import CustomUser, UserRole
-from .serializers import CustomUserSerializer, UserRoleSerializer, CustomUserCreateSerializer
+from .serializers import (
+    CustomUserSerializer, UserRoleSerializer, PublicUserRegistrationSerializer
+)
+from .permissions import IsManagerOrAdmin
+
+
+def login_response(username, password):
+    """Authentifie un utilisateur et produit la réponse token commune."""
+    if not username or not password:
+        return Response(
+            {'detail': 'Username et password requis'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    user = authenticate(username=username, password=password)
+    if not user:
+        return Response(
+            {'detail': 'Identifiants invalides'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    token, _ = Token.objects.get_or_create(user=user)
+    return Response({
+        'token': token.key,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'role': user.role,
+            'phone_number': user.phone_number
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    """Route publique et stable de connexion par token."""
+    return login_response(request.data.get('username'), request.data.get('password'))
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -16,14 +56,14 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     
     def get_serializer_class(self):
         if self.action == 'create':
-            return CustomUserCreateSerializer
+            return PublicUserRegistrationSerializer
         return CustomUserSerializer
     
     def get_permissions(self):
-        if self.action == 'create':
-            return []
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAdminUser()]
+        if self.action in ['create', 'login']:
+            return [AllowAny()]
+        if self.action in ['list', 'retrieve', 'set_role', 'update', 'partial_update', 'destroy']:
+            return [IsManagerOrAdmin()]
         return [IsAuthenticated()]
     
     @action(detail=False, methods=['get'])
@@ -51,37 +91,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         """Authentifier un utilisateur et retourner son token"""
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
-        if not username or not password:
-            return Response(
-                {'detail': 'Username et password requis'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        user = authenticate(username=username, password=password)
-        
-        if not user:
-            return Response(
-                {'detail': 'Identifiants invalides'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        token, _ = Token.objects.get_or_create(user=user)
-        
-        return Response({
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'role': user.role,
-                'phone_number': user.phone_number
-            }
-        })
+        return login_response(request.data.get('username'), request.data.get('password'))
 
 
 class UserRoleViewSet(viewsets.ReadOnlyModelViewSet):

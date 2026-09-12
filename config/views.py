@@ -2,11 +2,13 @@ from django.http import JsonResponse
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def api_root(request):
     """API Root - Liste des endpoints disponibles"""
     return Response({
@@ -71,3 +73,8 @@ class LoginPageView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Connexion - GIU'
         return context
+
+
+class DashboardPageView(TemplateView):
+    """Espace de travail après authentification."""
+    template_name = 'dashboard.html'

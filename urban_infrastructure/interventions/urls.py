@@ -1,8 +1,8 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from urban_infrastructure.router import PublicAPIRootRouter
 from .views import InterventionViewSet
 
-router = DefaultRouter()
+router = PublicAPIRootRouter()
 router.register(r'interventions', InterventionViewSet)
 
 urlpatterns = [

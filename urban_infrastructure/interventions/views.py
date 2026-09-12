@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Intervention, InterventionUpdate
 from .serializers import InterventionListSerializer, InterventionDetailSerializer, InterventionCreateSerializer, InterventionUpdateSerializer
+from urban_infrastructure.users.permissions import IsManagerOrAdmin
 
 
 class InterventionViewSet(viewsets.ModelViewSet):
@@ -11,6 +12,19 @@ class InterventionViewSet(viewsets.ModelViewSet):
     queryset = Intervention.objects.all()
     serializer_class = InterventionListSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'citizen' and not user.is_superuser:
+            return Intervention.objects.none()
+        if user.role == 'agent' and not user.is_superuser:
+            return Intervention.objects.filter(assigned_to=user)
+        return Intervention.objects.all()
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsManagerOrAdmin()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':
@@ -64,9 +78,9 @@ class InterventionViewSet(viewsets.ModelViewSet):
         """Filtrer les interventions par statut"""
         status_filter = request.query_params.get('status')
         if status_filter:
-            interventions = Intervention.objects.filter(status=status_filter)
+            interventions = self.get_queryset().filter(status=status_filter)
         else:
-            interventions = Intervention.objects.all()
+            interventions = self.get_queryset()
         
         serializer = self.get_serializer(interventions, many=True)
         return Response(serializer.data)

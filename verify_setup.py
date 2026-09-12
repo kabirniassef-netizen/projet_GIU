@@ -12,6 +12,12 @@ import sys
 import django
 from pathlib import Path
 
+# Évite les erreurs d'encodage dans les consoles Windows configurées en cp1252.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 # Couleurs pour l'affichage
 class Colors:
     GREEN = '\033[92m'
@@ -100,7 +106,7 @@ def check_models():
         from urban_infrastructure.incidents.models import Incident, IncidentCategory
         from urban_infrastructure.assets.models import Asset, AssetType
         from urban_infrastructure.interventions.models import Intervention
-        from urban_infrastructure.reports.models import Dashboard, KPI
+        from urban_infrastructure.reports.models import KPIMetrics, Report
         
         print_success("Modèle CustomUser importé")
         print_success("Modèle UserRole importé")
@@ -109,8 +115,8 @@ def check_models():
         print_success("Modèle Asset importé")
         print_success("Modèle AssetType importé")
         print_success("Modèle Intervention importé")
-        print_success("Modèle Dashboard importé")
-        print_success("Modèle KPI importé")
+        print_success("Modèle KPIMetrics importé")
+        print_success("Modèle Report importé")
         return True
     except ImportError as e:
         print_error(f"Erreur import modèles: {e}")

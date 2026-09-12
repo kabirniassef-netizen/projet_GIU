@@ -1,20 +1,22 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.db.models import Count, Q, Avg, Sum
 from datetime import datetime, timedelta
 from .models import KPIMetrics, Report
 from .serializers import KPIMetricsSerializer, ReportSerializer
 from urban_infrastructure.incidents.models import Incident
 from urban_infrastructure.interventions.models import Intervention
+from urban_infrastructure.assets.models import Asset
+from urban_infrastructure.users.permissions import CanConsultReports, IsManagerOrAdmin
 
 
 class KPIMetricsViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet pour les métriques KPI"""
     queryset = KPIMetrics.objects.all()
     serializer_class = KPIMetricsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanConsultReports]
     
     @action(detail=False, methods=['get'])
     def latest(self, request):
@@ -45,10 +47,38 @@ class ReportViewSet(viewsets.ModelViewSet):
     """ViewSet pour les rapports"""
     queryset = Report.objects.all()
     serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsManagerOrAdmin]
+
+    def get_permissions(self):
+        if self.action == 'global_statistics':
+            return [AllowAny()]
+        return [IsManagerOrAdmin()]
     
     def perform_create(self, serializer):
         serializer.save(generated_by=self.request.user)
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def global_statistics(self, request):
+        """Indicateurs publics affichés sur la page d'accueil."""
+        total_assets = Asset.objects.count()
+        operational_assets = Asset.objects.filter(status=Asset.OPERATIONAL).count()
+        total_interventions = Intervention.objects.count()
+        completed_interventions = Intervention.objects.filter(
+            status=Intervention.COMPLETED
+        ).count()
+
+        return Response({
+            'total_incidents': Incident.objects.count(),
+            'resolved_incidents': Incident.objects.filter(
+                status=Incident.RESOLVED
+            ).count(),
+            'total_interventions': total_interventions,
+            'completed_interventions': completed_interventions,
+            'asset_availability_rate': round(
+                (operational_assets / total_assets * 100) if total_assets else 0,
+                1,
+            ),
+        })
     
     @action(detail=False, methods=['post'])
     def generate_dashboard(self, request):
