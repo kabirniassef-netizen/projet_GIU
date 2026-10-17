@@ -2,17 +2,13 @@ services:
   - type: web
     name: giu-signalements
     runtime: python
-    plan: starter
+    plan: free
     region: frankfurt
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
     preDeployCommand: python manage.py migrate --noinput
     startCommand: gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT
     healthCheckPath: /
     autoDeploy: false
-    disk:
-      name: giu-media
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: DEBUG
         value: "False"
@@ -26,8 +22,6 @@ services:
         fromDatabase:
           name: giu-database
           property: connectionString
-      - key: MEDIA_ROOT
-        value: /var/data/media
       - key: SECURE_SSL_REDIRECT
         value: "True"
       - key: SESSION_COOKIE_SECURE
@@ -39,6 +33,6 @@ databases:
   - name: giu-database
     databaseName: giu
     user: giu
-    plan: basic-256mb
+    plan: free
     region: frankfurt
     postgresMajorVersion: "17"
