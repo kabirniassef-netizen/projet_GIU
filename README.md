@@ -124,7 +124,7 @@ déploiement.
 
 Le Blueprint ne charge pas de comptes ou de données de démonstration. Le
 déploiement automatique est désactivé; publiez explicitement les changements
-après vérification. L'adresse initiale sera
+après vérification. Les migrations sont lancées au démarrage du service. L'adresse initiale sera
 `https://giu-signalements.onrender.com`; un domaine personnalisé pourra être
 ajouté ensuite dans Render et dans `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`.
 Les avertissements HSTS sur les sous-domaines et le preload restent à évaluer
