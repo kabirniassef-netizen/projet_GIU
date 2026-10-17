@@ -101,23 +101,30 @@ ces valeurs secrètes dans Git.
 
 ### Mise en ligne sur Render
 
-Le fichier `render.yaml` décrit un service Django, une base PostgreSQL et un
-disque persistant pour les photos. Il utilise des offres payantes afin que la
-base et les fichiers ne reposent pas sur le stockage éphémère d'une offre
-gratuite. Vérifiez les tarifs affichés par Render avant de créer les ressources.
+Le fichier `render.yaml` décrit une démonstration utilisant les offres gratuites
+Render pour le service Django et PostgreSQL. Cette configuration est faite pour
+tester et présenter l'application, pas pour conserver des signalements réels.
+Render met le service web en veille après 15 minutes sans trafic; le premier
+chargement suivant peut donc être lent. Son système de fichiers est éphémère:
+les photos téléversées peuvent disparaître au redémarrage ou au redéploiement.
+La base PostgreSQL gratuite expire après 30 jours; après la période de grâce
+de Render, ses données sont supprimées si elle n'a pas été mise à niveau.
+Vérifiez les conditions et les tarifs affichés par Render au moment du
+déploiement.
 
 1. Publiez le dépôt sur GitHub et connectez-le à votre compte Render.
 2. Dans Render, choisissez **New > Blueprint**, sélectionnez ce dépôt et
-   examinez les ressources et leur coût avant de confirmer leur création.
+   confirmez que le service web et PostgreSQL sont bien configurés sur l'offre
+   gratuite avant de créer les ressources.
 3. Une fois le service prêt, créez un administrateur avec
    `python manage.py createsuperuser` dans le Shell du service Render.
 4. Testez l'inscription citoyen et l'envoi d'un signalement depuis un téléphone.
 5. Configurez SMTP séparément si les courriels doivent être remis aux
    destinataires. Les notifications WhatsApp restent optionnelles.
 
-Le Blueprint ne charge pas de comptes ou de données de démonstration en
-production. Le déploiement automatique est désactivé; publiez explicitement les
-changements après vérification. L'adresse initiale sera
+Le Blueprint ne charge pas de comptes ou de données de démonstration. Le
+déploiement automatique est désactivé; publiez explicitement les changements
+après vérification. L'adresse initiale sera
 `https://giu-signalements.onrender.com`; un domaine personnalisé pourra être
 ajouté ensuite dans Render et dans `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`.
 Les avertissements HSTS sur les sous-domaines et le preload restent à évaluer
