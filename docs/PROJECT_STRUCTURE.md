@@ -132,7 +132,7 @@ projet_GIU/
 ### Incidents App (⚠️ 80 lignes de models)
 ```
 - IncidentCategory model
-- Incident model (avec GPS, photo, priorité)
+- Incident model (adresse structurée, photo, priorité)
 - IncidentUpdate model (historique)
 - 6 statuts différents
 - 4 catégories
@@ -251,10 +251,10 @@ Intervention
 - description
 - category (FK to IncidentCategory)
 - reporter (FK to CustomUser)
-- latitude / longitude
-- address
+- region / department / commune
+- description
 - status (choice)
-- priority (choice: low, medium, high, urgent)
+- priority (choice: low, medium, high, critical)
 - photo (ImageField)
 - created_at
 - updated_at
@@ -353,7 +353,7 @@ ADMIN
 4. **Données Réalistes** - Script de population
 5. **Documentation Complète** - 5 fichiers doc
 6. **Interface Web** - HTML/CSS/JS responsive
-7. **Prêt Production** - Déployable directement
+7. **Déploiement** - Configuration à finaliser selon l'environnement cible
 8. **Code Professionnel** - Best practices Django
 
 ## 🎯 Utilisation Recommandée
@@ -384,8 +384,8 @@ ADMIN
 - 5 modules Django
 - 34 endpoints API
 - 12 modèles de données
-- 100% fonctionnel
-- Prêt pour production
+- Modules présents; tests et validation à exécuter
+- Déploiement de production non réalisé
 
 **✅ Livré le:** 30 Juin 2026  
-**📊 Status:** ✅ COMPLET
+**📊 Status:** Développement local; déploiement production restant

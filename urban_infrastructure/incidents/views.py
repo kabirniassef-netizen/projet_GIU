@@ -7,12 +7,16 @@ from .serializers import (
     IncidentCategorySerializer, IncidentListSerializer, IncidentDetailSerializer,
     IncidentCreateSerializer, IncidentUpdateSerializer
 )
-from urban_infrastructure.users.permissions import CanManageIncidents, IsManagerOrAdmin
+from urban_infrastructure.users.permissions import (
+    CanManageIncidents,
+    CanReportIncident,
+    IsManagerOrAdmin,
+)
 
 
 class IncidentCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet pour les catégories d'incidents"""
-    queryset = IncidentCategory.objects.all()
+    queryset = IncidentCategory.objects.order_by('id')
     serializer_class = IncidentCategorySerializer
     permission_classes = [IsAuthenticated]
 
@@ -26,13 +30,19 @@ class IncidentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.role == 'citizen' and not self.request.user.is_superuser:
             return Incident.objects.filter(reporter=self.request.user)
-        return Incident.objects.all()
+        if self.request.user.role == 'agent' and not self.request.user.is_superuser:
+            return Incident.objects.filter(intervention__assigned_to=self.request.user)
+        if self.request.user.role in {'manager', 'admin'} or self.request.user.is_superuser:
+            return Incident.objects.all()
+        return Incident.objects.none()
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             return [IsManagerOrAdmin()]
         if self.action == 'update_status':
             return [CanManageIncidents()]
+        if self.action == 'create':
+            return [CanReportIncident()]
         return [IsAuthenticated()]
     
     def get_serializer_class(self):
@@ -57,6 +67,20 @@ class IncidentViewSet(viewsets.ModelViewSet):
                 {'error': 'Status invalide'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        if request.user.role == 'agent' and new_status not in {
+            Incident.IN_PROGRESS, Incident.RESOLVED,
+        }:
+            return Response(
+                {'error': 'Les agents ne peuvent que prendre en charge ou résoudre un incident.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not incident.can_transition_to(new_status):
+            return Response(
+                {'error': 'Transition de statut invalide.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
         incident.status = new_status
         incident.save()
@@ -68,7 +92,6 @@ class IncidentViewSet(viewsets.ModelViewSet):
             comment=comment,
             updated_by=request.user
         )
-        
         return Response(IncidentDetailSerializer(incident).data)
     
     @action(detail=False, methods=['get'])

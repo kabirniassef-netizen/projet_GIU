@@ -3,9 +3,11 @@ from .models import IncidentCategory, Incident, IncidentUpdate
 
 
 class IncidentCategorySerializer(serializers.ModelSerializer):
+    name_display = serializers.CharField(source='get_name_display', read_only=True)
+
     class Meta:
         model = IncidentCategory
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'name_display', 'description']
 
 
 class IncidentUpdateSerializer(serializers.ModelSerializer):
@@ -27,9 +29,11 @@ class IncidentListSerializer(serializers.ModelSerializer):
         model = Incident
         fields = [
             'id', 'title', 'category', 'category_display', 'reporter_username',
-            'latitude', 'longitude', 'status', 'status_display', 'priority', 'priority_display',
+            'region', 'department', 'commune', 'status', 'status_display',
+            'priority', 'priority_display',
             'photo', 'created_at'
         ]
+        read_only_fields = ['status']
 
 
 class IncidentDetailSerializer(serializers.ModelSerializer):
@@ -43,12 +47,28 @@ class IncidentDetailSerializer(serializers.ModelSerializer):
         model = Incident
         fields = [
             'id', 'title', 'description', 'category', 'category_display', 'reporter', 'reporter_username',
-            'latitude', 'longitude', 'address', 'status', 'status_display', 'priority', 'priority_display',
+            'region', 'department', 'commune', 'status', 'status_display',
+            'priority', 'priority_display',
             'photo', 'created_at', 'updated_at', 'updates'
         ]
+        read_only_fields = ['status']
 
 
 class IncidentCreateSerializer(serializers.ModelSerializer):
+    MAX_PHOTO_SIZE = 5 * 1024 * 1024
+    region = serializers.CharField(max_length=100)
+    department = serializers.CharField(max_length=100)
+    commune = serializers.CharField(max_length=100)
+
     class Meta:
         model = Incident
-        fields = ['title', 'description', 'category', 'latitude', 'longitude', 'address', 'photo']
+        fields = [
+            'id', 'title', 'description', 'category',
+            'region', 'department', 'commune', 'photo',
+        ]
+        read_only_fields = ['id']
+
+    def validate_photo(self, photo):
+        if photo and photo.size > self.MAX_PHOTO_SIZE:
+            raise serializers.ValidationError('La photo ne doit pas dépasser 5 Mio.')
+        return photo

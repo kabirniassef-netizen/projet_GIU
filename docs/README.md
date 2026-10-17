@@ -48,7 +48,7 @@ Accédez à l'application sur `http://localhost:8000`
 
 ### 1. **Citoyen**
 - Signaler des anomalies urbaines
-- Joindre des photos et des données GPS
+- Joindre des photos et renseigner la région, le département et la commune
 - Suivre le statut de ses signalements en temps réel
 - Consulter les statistiques publiques
 

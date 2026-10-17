@@ -2,9 +2,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
+from urban_infrastructure.incidents.models import Incident, IncidentUpdate
 from .models import Intervention, InterventionUpdate
 from .serializers import InterventionListSerializer, InterventionDetailSerializer, InterventionCreateSerializer, InterventionUpdateSerializer
-from urban_infrastructure.users.permissions import IsManagerOrAdmin
+from urban_infrastructure.users.permissions import IsManagerOrAdmin, CanUpdateInterventionStatus
 
 
 class InterventionViewSet(viewsets.ModelViewSet):
@@ -19,11 +21,15 @@ class InterventionViewSet(viewsets.ModelViewSet):
             return Intervention.objects.none()
         if user.role == 'agent' and not user.is_superuser:
             return Intervention.objects.filter(assigned_to=user)
-        return Intervention.objects.all()
+        if user.role in {'manager', 'admin'} or user.is_superuser:
+            return Intervention.objects.all()
+        return Intervention.objects.none()
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsManagerOrAdmin()]
+        if self.action == 'update_status':
+            return [CanUpdateInterventionStatus()]
         return [IsAuthenticated()]
     
     def get_serializer_class(self):
@@ -32,6 +38,30 @@ class InterventionViewSet(viewsets.ModelViewSet):
         elif self.action == 'retrieve':
             return InterventionDetailSerializer
         return InterventionListSerializer
+
+    def perform_create(self, serializer):
+        status_value = (
+            Intervention.ASSIGNED
+            if serializer.validated_data.get('assigned_to')
+            else Intervention.PENDING
+        )
+        with transaction.atomic():
+            intervention = serializer.save(status=status_value)
+            InterventionUpdate.objects.create(
+                intervention=intervention,
+                status=status_value,
+                comment='Intervention planifiée.',
+                updated_by=self.request.user,
+            )
+            incident = intervention.incident
+            incident.status = Incident.PLANNED
+            incident.save()
+            IncidentUpdate.objects.create(
+                incident=incident,
+                status=Incident.PLANNED,
+                comment='Intervention planifiée.',
+                updated_by=self.request.user,
+            )
     
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
@@ -45,24 +75,51 @@ class InterventionViewSet(viewsets.ModelViewSet):
                 {'error': 'Status invalide'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        if request.user.role == 'agent' and new_status not in {
+            Intervention.IN_PROGRESS, Intervention.COMPLETED,
+        }:
+            return Response(
+                {'error': 'Les agents ne peuvent que prendre en charge ou terminer une intervention.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not intervention.can_transition_to(new_status):
+            return Response(
+                {'error': 'Transition de statut invalide.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
-        intervention.status = new_status
-        if new_status == Intervention.COMPLETED:
-            intervention.completed_date = timezone.now()
-        intervention.save()
-        
-        # Créer une mise à jour
-        update_data = {
-            'intervention': intervention,
-            'status': new_status,
-            'comment': comment,
-            'updated_by': request.user
-        }
-        
-        if 'photo' in request.FILES:
-            update_data['photo'] = request.FILES['photo']
-        
-        InterventionUpdate.objects.create(**update_data)
+        with transaction.atomic():
+            intervention.status = new_status
+            if new_status == Intervention.COMPLETED:
+                intervention.completed_date = timezone.now()
+            intervention.save()
+
+            update_data = {
+                'intervention': intervention,
+                'status': new_status,
+                'comment': comment,
+                'updated_by': request.user,
+            }
+            if 'photo' in request.FILES:
+                update_data['photo'] = request.FILES['photo']
+            InterventionUpdate.objects.create(**update_data)
+
+            incident_status = {
+                Intervention.IN_PROGRESS: Incident.IN_PROGRESS,
+                Intervention.COMPLETED: Incident.RESOLVED,
+            }.get(new_status)
+            if incident_status:
+                incident = intervention.incident
+                incident.status = incident_status
+                incident.save()
+                IncidentUpdate.objects.create(
+                    incident=incident,
+                    status=incident_status,
+                    comment=comment,
+                    updated_by=request.user,
+                )
         
         return Response(InterventionDetailSerializer(intervention).data)
     

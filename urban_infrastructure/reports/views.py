@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.permissions import AllowAny
 from django.db.models import Count, Q, Avg, Sum
 from datetime import datetime, timedelta
 from .models import KPIMetrics, Report
@@ -52,6 +52,10 @@ class ReportViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'global_statistics':
             return [AllowAny()]
+        if self.action in [
+            'list', 'retrieve', 'generate_dashboard', 'generate_monthly_report',
+        ]:
+            return [CanConsultReports()]
         return [IsManagerOrAdmin()]
     
     def perform_create(self, serializer):

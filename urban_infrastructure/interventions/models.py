@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from urban_infrastructure.incidents.models import Incident
 
 User = get_user_model()
@@ -20,6 +21,14 @@ class Intervention(models.Model):
         (COMPLETED, 'Complétée'),
         (CANCELLED, 'Annulée'),
     ]
+
+    ALLOWED_STATUS_TRANSITIONS = {
+        PENDING: {ASSIGNED, IN_PROGRESS, CANCELLED},
+        ASSIGNED: {IN_PROGRESS, CANCELLED},
+        IN_PROGRESS: {COMPLETED, CANCELLED},
+        COMPLETED: set(),
+        CANCELLED: set(),
+    }
     
     LOW = 'low'
     MEDIUM = 'medium'
@@ -53,6 +62,20 @@ class Intervention(models.Model):
     
     class Meta:
         ordering = ['-scheduled_date']
+
+    def can_transition_to(self, new_status):
+        return new_status in self.ALLOWED_STATUS_TRANSITIONS.get(self.status, set())
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            previous_status = type(self).objects.filter(pk=self.pk).values_list(
+                'status', flat=True,
+            ).first()
+            if previous_status and previous_status != self.status:
+                allowed = self.ALLOWED_STATUS_TRANSITIONS.get(previous_status, set())
+                if self.status not in allowed:
+                    raise ValidationError({'status': 'Transition de statut invalide.'})
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"Intervention #{self.id} - {self.incident.title}"

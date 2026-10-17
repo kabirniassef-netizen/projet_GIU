@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from .views import api_root, HomePageView, LoginPageView, DashboardPageView
 from urban_infrastructure.users.views import login_view
+from urban_infrastructure.notifications.webhooks import whatsapp_webhook
 
 urlpatterns = [
     path('', HomePageView.as_view(), name='home'),
@@ -19,6 +20,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/login/', login_view, name='api_login'),
     path('api/auth/', include('rest_framework.urls')),
+    path('webhooks/whatsapp/', whatsapp_webhook, name='whatsapp_webhook'),
     
     # API endpoints
     path('api/users/', include('urban_infrastructure.users.urls')),
@@ -26,8 +28,8 @@ urlpatterns = [
     path('api/assets/', include('urban_infrastructure.assets.urls')),
     path('api/interventions/', include('urban_infrastructure.interventions.urls')),
     path('api/reports/', include('urban_infrastructure.reports.urls')),
+    path('api/notifications/', include('urban_infrastructure.notifications.urls')),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media from the persistent Render disk.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

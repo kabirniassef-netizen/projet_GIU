@@ -24,7 +24,7 @@
 - Sérializers pour validation et représentation
 
 #### ⚠️ Signalements d'Incidents
-- Modèle Incident avec géolocalisation GPS
+- Modèle Incident avec adresse structurée (région, département, commune)
 - Catégories d'incidents (Éclairage, Voirie, Déchets, Signalisation)
 - Historique des mises à jour
 - Endpoints pour créer, mettre à jour et suivre les incidents

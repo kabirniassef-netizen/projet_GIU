@@ -341,10 +341,47 @@
                         <span id="btnText">Se Connecter</span>
                     </button>
                 </form>
+                <div class="text-center mt-4">
+                    <p id="registrationPrompt">Vous n’avez pas de compte citoyen ? <button class="btn btn-link p-0 align-baseline" type="button" id="showRegistrationButton">Créer un compte</button></p>
+                </div>
+                <form id="registrationForm" hidden>
+                    <h2 style="font-size: 20px; margin-bottom: 20px;">Créer un compte citoyen</h2>
+                    <div class="form-group">
+                        <label for="registrationFirstName">Prénom</label>
+                        <input type="text" id="registrationFirstName" name="first_name" required autocomplete="given-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationLastName">Nom</label>
+                        <input type="text" id="registrationLastName" name="last_name" required autocomplete="family-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationUsername">Nom d’utilisateur</label>
+                        <input type="text" id="registrationUsername" name="username" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationEmail">Adresse courriel</label>
+                        <input type="email" id="registrationEmail" name="email" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationPhone">Téléphone (facultatif)</label>
+                        <input type="tel" id="registrationPhone" name="phone_number" autocomplete="tel">
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationPassword">Mot de passe (8 caractères minimum)</label>
+                        <input type="password" id="registrationPassword" name="password" required minlength="8" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationPasswordConfirm">Confirmer le mot de passe</label>
+                        <input type="password" id="registrationPasswordConfirm" required minlength="8" autocomplete="new-password">
+                    </div>
+                    <p id="registrationMessage" class="small" role="status" aria-live="polite"></p>
+                    <button type="submit" class="btn-login" id="registrationBtn">Créer mon compte et signaler</button>
+                    <p class="text-center mt-3 mb-0">Vous avez déjà un compte ? <button class="btn btn-link p-0 align-baseline" type="button" id="showLoginButton">Se connecter</button></p>
+                </form>
             </div>
 
             <div class="login-footer">
-                <p>Pas encore de compte? <a href="#signup">Contactez l'administrateur</a></p>
+                <p>Un citoyen peut créer son compte directement pour signaler un incident.</p>
                 <p style="margin-top: 10px; font-size: 11px; color: #999;">
                     Version 1.0.0 © 2026 Municipalité
                 </p>
@@ -419,6 +456,20 @@
         const spinner = document.getElementById('spinner');
         const btnText = document.getElementById('btnText');
         const alertDiv = document.getElementById('alert');
+        const registrationForm = document.getElementById('registrationForm');
+        const registrationPrompt = document.getElementById('registrationPrompt');
+        const allowedDestinations = new Set([
+            '/dashboard/?signalement=1',
+            '/dashboard/?module=users',
+            '/dashboard/?module=assets',
+            '/dashboard/?module=interventions',
+            '/dashboard/?module=decisions',
+            '/dashboard/?module=reports',
+        ]);
+        const requestedDestination = new URLSearchParams(window.location.search).get('next');
+        const postLoginDestination = allowedDestinations.has(requestedDestination)
+            ? requestedDestination
+            : '/dashboard/';
 
         // Afficher une alerte
         function showAlert(message, type = 'error') {
@@ -428,6 +479,70 @@
                 alertDiv.classList.remove('show');
             }, 5000);
         }
+
+        document.getElementById('showRegistrationButton').addEventListener('click', () => {
+            loginForm.hidden = true;
+            registrationPrompt.hidden = true;
+            registrationForm.hidden = false;
+            document.getElementById('registrationFirstName').focus();
+        });
+
+        document.getElementById('showLoginButton').addEventListener('click', () => {
+            registrationForm.hidden = true;
+            loginForm.hidden = false;
+            registrationPrompt.hidden = false;
+            usernameInput.focus();
+        });
+
+        registrationForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const password = document.getElementById('registrationPassword').value;
+            const passwordConfirm = document.getElementById('registrationPasswordConfirm').value;
+            const message = document.getElementById('registrationMessage');
+            const submitButton = document.getElementById('registrationBtn');
+
+            if (password !== passwordConfirm) {
+                message.className = 'small text-danger';
+                message.textContent = 'Les deux mots de passe ne correspondent pas.';
+                return;
+            }
+
+            submitButton.disabled = true;
+            message.className = 'small text-secondary';
+            message.textContent = 'Création du compte en cours…';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/users/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        first_name: document.getElementById('registrationFirstName').value.trim(),
+                        last_name: document.getElementById('registrationLastName').value.trim(),
+                        username: document.getElementById('registrationUsername').value.trim(),
+                        email: document.getElementById('registrationEmail').value.trim(),
+                        phone_number: document.getElementById('registrationPhone').value.trim(),
+                        password,
+                    }),
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    const details = Object.values(result).flat().join(' ');
+                    throw new Error(details || 'La création du compte a échoué.');
+                }
+
+                await authClient.login(
+                    document.getElementById('registrationUsername').value.trim(),
+                    password,
+                );
+                message.className = 'small text-success';
+                message.textContent = 'Compte créé. Ouverture du formulaire de signalement…';
+                window.location.href = '/dashboard/?signalement=1';
+            } catch (error) {
+                message.className = 'small text-danger';
+                message.textContent = error.message || 'Impossible de créer le compte. Veuillez réessayer.';
+                submitButton.disabled = false;
+            }
+        });
 
         // Charger les identifiants sauvegardés
         function loadRememberedUsername() {
@@ -469,7 +584,7 @@
 
                 // Rediriger après 1.5 secondes
                 setTimeout(() => {
-                    window.location.href = '/dashboard/';
+                    window.location.href = postLoginDestination;
                 }, 1500);
             } catch (error) {
                 showAlert(error.message || 'Erreur de connexion', 'error');
@@ -483,7 +598,7 @@
         // Si déjà connecté, rediriger vers l'accueil
         window.addEventListener('DOMContentLoaded', () => {
             if (authClient.isAuthenticated()) {
-                window.location.href = '/dashboard/';
+                window.location.href = postLoginDestination;
             }
             loadRememberedUsername();
         });

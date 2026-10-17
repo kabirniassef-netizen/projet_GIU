@@ -1,8 +1,9 @@
 # 🎉 BIENVENUE - Projet GIU Complet!
 
-## ✅ Le Projet est Livré et Fonctionnel!
+## État du projet
 
-Félicitations! Le **Système de Gestion d'Infrastructure Urbaine** est maintenant **100% complet et prêt à l'emploi**.
+Le dépôt contient l'application GIU. Configurez l'environnement local, appliquez
+les migrations et exécutez les tests avant de considérer le projet prêt.
 
 ## 🚀 Démarrage Immédiat
 
@@ -95,7 +96,7 @@ projet_GIU/
 ### Pour les Citoyens 👤
 - ✅ Signaler une anomalie urbaine
 - ✅ Joindre une photo
-- ✅ Géolocalisation GPS
+- ✅ Adresse structurée pour les signalements
 - ✅ Suivre le statut en temps réel
 - ✅ Historique de signalements
 
@@ -193,7 +194,7 @@ python manage.py shell
 ✨ **Données Prêtes** - Utilisateurs et exemples inclus  
 ✨ **Design Moderne** - Interface responsive  
 ✨ **Sécurisé** - Authentification et permissions  
-✨ **Scalable** - Prêt pour production  
+✨ **Scalable** - PostgreSQL et déploiement restent à configurer
 ✨ **Best Practices** - Code Django professionnel  
 
 ## 📞 Support et Questions
@@ -235,7 +236,7 @@ A: Vérifiez les identifiants dans le tableau ci-dessus
 - 🗺️ Cartes interactives (OpenStreetMap/Mapbox)
 - 💬 Notifications en temps réel (WebSocket)
 - 📱 Application mobile (React Native)
-- 🤖 Analyse prédictive (ML)
+- 🤖 Analyse prédictive (à cadrer, non implémentée)
 - 📧 Intégration Email/SMS
 - 📄 Export PDF des rapports
 - 🔔 Système de chatbot IA
@@ -296,7 +297,7 @@ Pour toute question ou problème:
 
 ## 🎉 Conclusion
 
-**Le projet est 100% complet et prêt à l'emploi!**
+**Le projet doit encore être validé et préparé pour la production.**
 
 Vous avez entre les mains un système professionnel, bien documenté, avec une architecture solide et extensible.
 
@@ -311,8 +312,8 @@ Commencez immédiatement en lançant le serveur et en explorant l'interface!
 - ✅ **5** applications Django
 - ✅ **12** modèles de données
 - ✅ **34** endpoints API
-- ✅ **100%** fonctionnel
-- ✅ **Prêt pour production**
+- ⏳ **Validation fonctionnelle** à terminer
+- ⏳ **Déploiement de production** à réaliser
 
 ### 🚀 Statut du Projet
 
@@ -321,7 +322,7 @@ Commencez immédiatement en lançant le serveur et en explorant l'interface!
 ║  ✅ PROJET COMPLET - LIVRÉ       ║
 ║  📅 Date: 30 Juin 2026           ║
 ║  📊 Version: 1.0.0               ║
-║  🚀 Status: Production Ready     ║
+║  🚀 Status: Development          ║
 ╚═══════════════════════════════════╝
 ```
 

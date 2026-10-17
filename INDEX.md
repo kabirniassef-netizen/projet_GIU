@@ -267,11 +267,11 @@ python scripts/verify_setup.py
 
 ## ✨ Résumé
 
-✅ **Projet 100% complet**  
+✅ **Code applicatif présent; validation en cours**
 ✅ **API 34 endpoints**  
 ✅ **5 modules Django**  
 ✅ **Documentation complète dans /docs/**  
-✅ **Prêt pour production**  
+⏳ **Déploiement production à préparer**
 
 **Commencez ici:** [docs/README.md](docs/README.md)
 
@@ -533,7 +533,8 @@ python scripts/verify_setup.py
 
 ## 🎉 CONCLUSION
 
-Vous avez accès à un projet **100% complet** et **prêt pour production**.
+Le dépôt contient le socle applicatif; l'installation, la validation et le
+déploiement de production doivent être terminés avant toute mise en service.
 
 **Prochaine étape:**
 1. Lire: **00_START_HERE.md**
@@ -543,7 +544,7 @@ Vous avez accès à un projet **100% complet** et **prêt pour production**.
 ---
 
 **Créé le:** 30 Juin 2026  
-**Status:** ✅ Complet et Fonctionnel  
+**Status:** Socle applicatif présent; déploiement de production non réalisé
 **Version:** 1.0.0  
 
 Bon développement! 🚀

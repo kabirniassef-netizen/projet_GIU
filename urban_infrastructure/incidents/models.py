@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 User = get_user_model()
@@ -15,6 +16,10 @@ class IncidentCategory(models.Model):
     TREE = 'tree'
     BENCH = 'bench'
     OTHER = 'other'
+    IMPRUDENCE = 'imprudence'
+    SPEEDING = 'vitesse'
+    BREAKDOWN = 'panne'
+    POOR_VISIBILITY = 'mauvaise_visibilite'
     
     CATEGORY_CHOICES = [
         (LIGHTING, 'Éclairage Public'),
@@ -25,6 +30,10 @@ class IncidentCategory(models.Model):
         (TREE, 'Arbres'),
         (BENCH, 'Mobilier Urbain'),
         (OTHER, 'Autre'),
+        (IMPRUDENCE, 'Imprudence'),
+        (SPEEDING, 'Vitesse'),
+        (BREAKDOWN, 'Panne'),
+        (POOR_VISIBILITY, 'Mauvaise visibilité'),
     ]
     
     name = models.CharField(max_length=100, unique=True, choices=CATEGORY_CHOICES)
@@ -54,6 +63,15 @@ class Incident(models.Model):
         (RESOLVED, 'Résolu'),
         (REJECTED, 'Rejeté'),
     ]
+
+    ALLOWED_STATUS_TRANSITIONS = {
+        CREATED: {VALIDATED, REJECTED},
+        VALIDATED: {PLANNED, IN_PROGRESS, RESOLVED},
+        PLANNED: {IN_PROGRESS, RESOLVED},
+        IN_PROGRESS: {RESOLVED},
+        RESOLVED: set(),
+        REJECTED: set(),
+    }
     
     LOW = 'low'
     MEDIUM = 'medium'
@@ -72,9 +90,10 @@ class Incident(models.Model):
     category = models.ForeignKey(IncidentCategory, on_delete=models.PROTECT, related_name='incidents')
     reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reported_incidents')
     
-    # Location
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    # Structured location for new reports; address retains previously saved free text.
+    region = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True)
+    commune = models.CharField(max_length=100, blank=True)
     address = models.CharField(max_length=300, blank=True)
     
     # Status
@@ -90,6 +109,20 @@ class Incident(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+    def can_transition_to(self, new_status):
+        return new_status in self.ALLOWED_STATUS_TRANSITIONS.get(self.status, set())
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            previous_status = type(self).objects.filter(pk=self.pk).values_list(
+                'status', flat=True,
+            ).first()
+            if previous_status and previous_status != self.status:
+                allowed = self.ALLOWED_STATUS_TRANSITIONS.get(previous_status, set())
+                if self.status not in allowed:
+                    raise ValidationError({'status': 'Transition de statut invalide.'})
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.title} - {self.get_status_display()}"
