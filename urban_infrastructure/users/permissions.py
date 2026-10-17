@@ -22,6 +22,18 @@ class CanManageIncidents(BasePermission):
         return has_role(request.user, FIELD_ROLES)
 
 
+class CanReportIncident(BasePermission):
+    """Seuls les citoyens peuvent créer un signalement."""
+    def has_permission(self, request, view):
+        return has_role(request.user, {'citizen'})
+
+
+class CanUpdateInterventionStatus(BasePermission):
+    """Les agents affectés et la hiérarchie peuvent suivre une intervention."""
+    def has_permission(self, request, view):
+        return has_role(request.user, FIELD_ROLES)
+
+
 class CanConsultReports(BasePermission):
     """Les décideurs et la hiérarchie peuvent consulter les indicateurs."""
     def has_permission(self, request, view):

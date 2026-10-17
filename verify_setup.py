@@ -85,7 +85,8 @@ def check_apps():
         'incidents',
         'assets',
         'interventions',
-        'reports'
+        'reports',
+        'notifications',
     ]
     
     all_ok = True
@@ -93,7 +94,7 @@ def check_apps():
         try:
             apps.get_app_config(app)
             print_success(f"App {app} installée")
-        except:
+        except LookupError:
             print_error(f"App {app} NOT trouvée")
             all_ok = False
     
@@ -172,7 +173,7 @@ def check_documentation():
     print_header("8️⃣ VÉRIFICATION DOCUMENTATION")
     
     docs = [
-        "00_START_HERE.md",
+        "utils/00_START_HERE.md",
         "README.md",
         "API_DOCUMENTATION.md",
         "DELIVERY_SUMMARY.md",

@@ -26,6 +26,9 @@ class APIClient {
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = await this.getHeaders();
+    if (options.body instanceof FormData) {
+      delete headers['Content-Type'];
+    }
     
     const config = {
       ...options,
@@ -45,6 +48,7 @@ class APIClient {
         throw new Error(`HTTP Error: ${response.status}`);
       }
       
+      if (response.status === 204) return null;
       return await response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -77,10 +81,14 @@ class APIClient {
     return this.request(`/incidents/incidents/${id}/`);
   }
 
+  async deleteIncident(id) {
+    return this.request(`/incidents/incidents/${id}/`, { method: 'DELETE' });
+  }
+
   async createIncident(data) {
     return this.request('/incidents/incidents/', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: data instanceof FormData ? data : JSON.stringify(data)
     });
   }
 
@@ -161,6 +169,18 @@ class APIClient {
 
   async getPendingInterventions() {
     return this.request('/reports/reports/pending_interventions/');
+  }
+
+  // Notifications
+  async getNotifications() {
+    return this.request('/notifications/');
+  }
+
+  async markNotificationRead(id) {
+    return this.request(`/notifications/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_read: true })
+    });
   }
 }
 

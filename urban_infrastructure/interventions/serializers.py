@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from urban_infrastructure.incidents.models import Incident
 from .models import Intervention, InterventionUpdate
 
 
@@ -45,4 +46,17 @@ class InterventionDetailSerializer(serializers.ModelSerializer):
 class InterventionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Intervention
-        fields = ['incident', 'assigned_to', 'scheduled_date', 'estimated_duration', 'priority', 'notes']
+        fields = ['id', 'incident', 'assigned_to', 'scheduled_date', 'estimated_duration', 'priority', 'notes', 'status']
+        read_only_fields = ['id', 'status']
+
+    def validate_incident(self, incident):
+        if incident.status != Incident.VALIDATED:
+            raise serializers.ValidationError(
+                'Un incident doit être validé avant la planification d’une intervention.'
+            )
+        return incident
+
+    def validate_assigned_to(self, user):
+        if user and user.role != 'agent':
+            raise serializers.ValidationError('L’intervention doit être attribuée à un agent technique.')
+        return user

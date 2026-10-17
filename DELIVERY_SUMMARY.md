@@ -24,7 +24,7 @@
 - Sérializers pour validation et représentation
 
 #### ⚠️ Signalements d'Incidents (`urban_infrastructure/incidents/`)
-- Modèle Incident avec géolocalisation GPS
+- Modèle Incident avec adresse structurée (région, département, commune)
 - Catégories d'incidents (Éclairage, Voirie, Déchets, Signalisation)
 - Historique des mises à jour
 - Endpoints pour créer, mettre à jour et suivre les incidents
@@ -153,7 +153,7 @@ http://localhost:8000
 ### Pour les Citoyens
 ✅ Signalement d'anomalies urbaines  
 ✅ Joindre des photos  
-✅ Géolocalisation GPS  
+✅ Adresse structurée pour les signalements
 ✅ Suivi du statut en temps réel  
 ✅ Historique des signalements  
 
@@ -261,18 +261,16 @@ Total: 50+ fichiers, 3000+ lignes de code
 7. **Scalabilité**: Prêt pour PostgreSQL en production
 8. **Best Practices**: Code Django selon les conventions
 
-## 🚀 Prêt pour Production
+## 🚧 Préparation de la production
 
-Le projet est prêt pour être déployé avec les modifications suivantes:
+Le dépôt contient la configuration de sécurité et le support PostgreSQL, mais
+aucun environnement de production n'est encore déployé. Avant la mise en ligne:
 
-1. Changer `DEBUG = False` dans settings.py
-2. Migrer de SQLite à PostgreSQL
-3. Configurer les variables d'environnement
-4. Activer HTTPS
-5. Configurer un serveur WSGI (Gunicorn)
-6. Ajouter Nginx comme reverse proxy
-7. Configurer les sauvegardes de base de données
-8. Mettre en place le monitoring
+1. Fournir une `SECRET_KEY` dédiée et définir `DEBUG=False`.
+2. Renseigner `ALLOWED_HOSTS`, les origines CORS/CSRF et les paramètres SMTP.
+3. Préparer PostgreSQL et appliquer les migrations après sauvegarde.
+4. Déployer derrière HTTPS avec un serveur WSGI et un reverse proxy.
+5. Vérifier `python manage.py check --deploy`, les sauvegardes et le monitoring.
 
 ## 📞 Support et Améliorations
 
@@ -281,7 +279,7 @@ Le projet est prêt pour être déployé avec les modifications suivantes:
 - Notifications en temps réel (WebSocket)
 - Application mobile (React Native)
 - Intégration SMS/Email
-- Analyse prédictive avec ML
+- Analyse prédictive (à cadrer, non implémentée)
 - Système de chatbot IA
 - Export PDF des rapports
 - Intégration avec systèmes externes
@@ -297,17 +295,18 @@ Le projet est prêt pour être déployé avec les modifications suivantes:
 - ✅ Base de données avec données
 - ✅ Documentation complète
 - ✅ Données de test
-- ✅ Configuration déploiement
+- ✅ Paramètres de déploiement documentés (configuration réelle encore à faire)
 - ✅ Authentification sécurisée
-- ✅ Prêt pour développement et production
+- ✅ Prêt pour développement local après installation
+- ⏳ Validation et déploiement de production à réaliser
 
-**PROJECT COMPLETE! 🎉**
+**Socle de développement documenté; déploiement de production restant.**
 
 ---
 
 **Date de Livraison:** 30 Juin 2026  
 **Version:** 1.0.0  
-**Status:** ✅ Production Ready  
+**Status:** Développement local pris en charge; production non déployée
 **Lignes de Code:** 3000+  
 **Fichiers:** 50+  
 **Endpoints:** 34  

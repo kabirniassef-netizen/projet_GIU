@@ -63,13 +63,15 @@ curl -X POST http://localhost:8000/api/incidents/incidents/ \
   -d '{
     "title": "Nid-de-poule rue de la Paix",
     "description": "Grande dégradation de la chaussée",
-    "category": "road",
-    "latitude": 48.8566,
-    "longitude": 2.3522,
-    "address": "Rue de la Paix, 75000 Paris",
+    "category": 2,
+    "region": "Île-de-France",
+    "department": "Paris",
+    "commune": "Paris",
     "priority": "high"
   }'
 ```
+
+Les catégories comprennent notamment « Imprudence », « Vitesse », « Panne » et « Mauvaise visibilité ». La région, le département et la commune sont obligatoires ; aucune latitude ni longitude n’est demandée pour un signalement.
 
 ### 2. Lister les Incidents
 
@@ -133,6 +135,26 @@ Réponse:
   "asset_availability_rate": 96.67
 }
 ```
+
+### 6. Notifications personnelles
+
+Lister les notifications de l’utilisateur connecté :
+
+```bash
+curl http://localhost:8000/api/notifications/ \
+  -H "Authorization: Token votre_token"
+```
+
+Marquer une notification comme lue :
+
+```bash
+curl -X PATCH http://localhost:8000/api/notifications/1/ \
+  -H "Authorization: Token votre_token" \
+  -H "Content-Type: application/json" \
+  -d '{"is_read": true}'
+```
+
+Chaque utilisateur ne peut consulter et modifier que ses propres notifications. Les signalements utilisent une adresse composée de la région, du département et de la commune (sans coordonnées GPS) ; les coordonnées des actifs doivent respecter les bornes GPS. Les photos d’incident sont limitées à 5 Mio. Les changements de statut suivent des transitions autorisées et sont historisés avec leur auteur.
 
 ## Pagination
 
@@ -201,10 +223,10 @@ curl http://localhost:8000/api/incidents/incidents/$INCIDENT_ID/ \
 }
 ```
 
-**Format invalide:**
+**Valeur de champ invalide:**
 ```json
 {
-  "latitude": ["Not a valid number."]
+  "category": ["Invalid pk - object does not exist."]
 }
 ```
 

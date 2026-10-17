@@ -437,7 +437,7 @@ python manage.py shell
 
 ---
 
-**Projet Complet et Livré!** ✅  
+**Projet GIU — inventaire des fichiers**
 **Date**: 30 Juin 2026  
-**Status**: Production Ready  
+**Status**: Socle applicatif présent; production non déployée
 **Version**: 1.0.0

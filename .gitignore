@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+data.json
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+db.sqlite3
+media/
+staticfiles/
+backups/

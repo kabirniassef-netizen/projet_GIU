@@ -47,3 +47,16 @@ class AssetCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ['code', 'name', 'asset_type', 'description', 'latitude', 'longitude', 'location', 'model', 'brand', 'specifications', 'installed_date']
+
+    def validate(self, attrs):
+        coordinates = {
+            'latitude': (-90, 90),
+            'longitude': (-180, 180),
+        }
+        for field, (minimum, maximum) in coordinates.items():
+            value = attrs.get(field, getattr(self.instance, field, None))
+            if value is not None and not minimum <= value <= maximum:
+                raise serializers.ValidationError({
+                    field: f'La valeur doit être comprise entre {minimum} et {maximum}.'
+                })
+        return attrs
