@@ -1,8 +1,12 @@
+import os
+import subprocess
+import sys
 from datetime import timedelta
 from io import BytesIO
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -24,6 +28,19 @@ class ProjectBootstrapTests(TestCase):
         response = client.get('/admin/login/')
 
         self.assertEqual(response.status_code, 200)
+
+    def test_production_settings_can_store_uploaded_photos(self):
+        env = {
+            **os.environ,
+            'DEBUG': 'False',
+            'SECRET_KEY': 'production-settings-test-key-0123456789-abcdefghijklmnop',
+        }
+        result = subprocess.run(
+            [sys.executable, '-c', "from config import settings; print(sorted(settings.STORAGES))"],
+            cwd=settings.BASE_DIR, env=env, capture_output=True, text=True, check=True,
+        )
+
+        self.assertIn("'default'", result.stdout)
 
     @override_settings(CITIZEN_HOME_ONLY=True)
     def test_hosted_home_page_only_shows_citizen_features(self):
