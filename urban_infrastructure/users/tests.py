@@ -31,8 +31,11 @@ class ProjectBootstrapTests(TestCase):
         home = client.get('/')
         self.assertEqual(home.status_code, 200)
         self.assertContains(home, 'href="/signaler/"')
-        for module in ('users', 'assets', 'interventions', 'decisions', 'reports'):
-            self.assertContains(home, f'href="/dashboard/?module={module}"')
+        self.assertContains(home, 'href="/suivi/"')
+        # L'accueil est réservé aux citoyens : aucun accès aux outils internes.
+        self.assertNotContains(home, '/dashboard/')
+        self.assertNotContains(home, 'href="/admin/"')
+        self.assertNotContains(home, 'href="/api/"')
         self.assertNotContains(home, 'href="/api/incidents/"')
         self.assertNotContains(home, 'href="/api/users/"')
         self.assertNotContains(home, 'href="/api/assets/"')
