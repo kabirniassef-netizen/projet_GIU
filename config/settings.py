@@ -51,6 +51,9 @@ elif not DEBUG and (
 # SECURITY WARNING: don't run with debug turned on in production!
 ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver')
 
+# Sur le site hébergé, l'accueil ne montre que le signalement et le suivi citoyens.
+CITIZEN_HOME_ONLY = env_bool('CITIZEN_HOME_ONLY', not DEBUG)
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

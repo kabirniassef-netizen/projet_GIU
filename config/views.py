@@ -86,6 +86,7 @@ class HomePageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Système de Gestion d\'Infrastructure Urbaine'
+        context['citizen_only'] = settings.CITIZEN_HOME_ONLY
         return context
 
 
