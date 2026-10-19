@@ -246,6 +246,10 @@ X_FRAME_OPTIONS = 'DENY'
 
 if not DEBUG:
     STORAGES = {
+        # Sans « default », Django ne peut pas enregistrer les photos envoyées.
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
