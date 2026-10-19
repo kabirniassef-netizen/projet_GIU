@@ -29,6 +29,11 @@ services:
         value: "True"
       - key: CSRF_COOKIE_SECURE
         value: "True"
+      # Envoi des notifications par e-mail via l'API Brevo (à renseigner dans le tableau de bord Render).
+      - key: BREVO_API_KEY
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
 
 databases:
   - name: giu-database
