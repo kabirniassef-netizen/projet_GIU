@@ -16,7 +16,7 @@ from urban_infrastructure.interventions.models import Intervention, Intervention
 from urban_infrastructure.assets.models import AssetType
 
 
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=True, CITIZEN_HOME_ONLY=False)
 class ProjectBootstrapTests(TestCase):
     def test_django_admin_login_page_is_available(self):
         client = Client()
@@ -24,6 +24,20 @@ class ProjectBootstrapTests(TestCase):
         response = client.get('/admin/login/')
 
         self.assertEqual(response.status_code, 200)
+
+    @override_settings(CITIZEN_HOME_ONLY=True)
+    def test_hosted_home_page_only_shows_citizen_features(self):
+        home = Client().get('/')
+
+        self.assertEqual(home.status_code, 200)
+        self.assertContains(home, 'href="/signaler/"')
+        self.assertContains(home, 'href="/suivi/"')
+        self.assertContains(home, 'id="reportModal"')
+        self.assertNotContains(home, '/dashboard/')
+        self.assertNotContains(home, 'href="/admin/"')
+        self.assertNotContains(home, 'href="/api/"')
+        self.assertNotContains(home, 'href="/login/"')
+        self.assertNotContains(home, 'id="modules"')
 
     def test_citizen_reporting_links_open_the_form_with_photo_upload(self):
         client = Client()
