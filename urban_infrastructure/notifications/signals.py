@@ -68,9 +68,8 @@ def _create_notifications(users, event_type, message, related_object):
     ])
     email_messages = []
     sent_addresses = set()
-    email_recipients = User.objects.filter(
-        is_active=True,
-    ).exclude(email='').order_by('pk')
+    # Chaque destinataire de la notification la reçoit aussi sur sa propre adresse e-mail.
+    email_recipients = sorted(recipients.values(), key=lambda user: user.pk)
     incident_photo = None
     if event_type == 'incident_created' and isinstance(related_object, Incident):
         incident_address = ', '.join(filter(None, (
@@ -103,7 +102,7 @@ def _create_notifications(users, event_type, message, related_object):
             )
 
     for user in email_recipients:
-        email_address = user.email.strip()
+        email_address = (user.email or '').strip()
         if not email_address:
             continue
         normalized_email = email_address.casefold()

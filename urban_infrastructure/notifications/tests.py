@@ -352,6 +352,69 @@ class NotificationTests(TestCase):
         EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
         DEFAULT_FROM_EMAIL='notifications@example.com',
     )
+    def test_each_active_user_gets_new_incident_email_on_own_address(self):
+        for user in (self.citizen, self.manager, self.other_citizen, self.agent):
+            user.email = f'{user.username}@example.com'
+            user.save(update_fields=['email'])
+
+        self.create_incident()
+
+        self.assertEqual(
+            sorted(message.to for message in mail.outbox),
+            sorted([f'{user.username}@example.com'] for user in (
+                self.citizen, self.manager, self.other_citizen, self.agent,
+            )),
+        )
+        for message in mail.outbox:
+            user = get_user_model().objects.get(email=message.to[0])
+            self.assertIn(f'Bonjour {user.username},', message.body)
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        DEFAULT_FROM_EMAIL='notifications@example.com',
+    )
+    def test_status_change_email_goes_only_to_reporter(self):
+        self.citizen.email = 'citizen@example.com'
+        self.citizen.save(update_fields=['email'])
+        self.other_citizen.email = 'other@example.com'
+        self.other_citizen.save(update_fields=['email'])
+        incident = self.create_incident()
+        mail.outbox.clear()
+
+        incident.status = Incident.VALIDATED
+        incident.save()
+
+        self.assertEqual([message.to for message in mail.outbox], [['citizen@example.com']])
+
+    @override_settings(
+        EMAIL_BACKEND='urban_infrastructure.notifications.email_backends.BrevoEmailBackend',
+        BREVO_API_KEY='brevo-test-key',
+        DEFAULT_FROM_EMAIL='GIU <notifications@example.com>',
+    )
+    def test_brevo_backend_sends_email_through_http_api(self):
+        self.citizen.email = 'citizen@example.com'
+        self.citizen.save(update_fields=['email'])
+
+        with patch(
+            'urban_infrastructure.notifications.email_backends.urllib_request.urlopen',
+        ) as urlopen:
+            incident = self.create_incident()
+
+        urlopen.assert_called_once()
+        api_request = urlopen.call_args.args[0]
+        self.assertEqual(api_request.full_url, 'https://api.brevo.com/v3/smtp/email')
+        self.assertEqual(api_request.get_header('Api-key'), 'brevo-test-key')
+        payload = json.loads(api_request.data.decode('utf-8'))
+        self.assertEqual(
+            payload['sender'], {'email': 'notifications@example.com', 'name': 'GIU'},
+        )
+        self.assertEqual(payload['to'], [{'email': 'citizen@example.com'}])
+        self.assertIn(incident.title, payload['textContent'])
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        DEFAULT_FROM_EMAIL='notifications@example.com',
+    )
     def test_status_api_sends_email_to_reporter(self):
         self.citizen.email = 'citizen@example.com'
         self.citizen.save(update_fields=['email'])

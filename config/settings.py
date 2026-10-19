@@ -175,11 +175,15 @@ SERVE_MEDIA = env_bool('SERVE_MEDIA', False)
 SHOW_DEMO_ACCOUNTS = env_bool('SHOW_DEMO_ACCOUNTS', DEBUG)
 
 # Email notifications
-EMAIL_BACKEND = os.getenv(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend'
-    if DEBUG else 'django.core.mail.backends.smtp.EmailBackend',
-)
+# Avec une clé Brevo, les e-mails passent par son API HTTPS (le SMTP est bloqué sur Render gratuit).
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
+if BREVO_API_KEY:
+    _default_email_backend = 'urban_infrastructure.notifications.email_backends.BrevoEmailBackend'
+elif DEBUG:
+    _default_email_backend = 'django.core.mail.backends.console.EmailBackend'
+else:
+    _default_email_backend = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', _default_email_backend)
 EMAIL_HOST = os.getenv('EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
