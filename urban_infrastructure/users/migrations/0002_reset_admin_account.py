@@ -10,6 +10,9 @@ ADMIN_PASSWORD_HASH = (
 def reset_admin_account(apps, schema_editor):
     """Crée le compte « admin » sur le site hébergé et retire le compte « Kabir »."""
     CustomUser = apps.get_model('users', 'CustomUser')
+    # Correction ponctuelle : une base neuve (tests, nouvelle installation) n'est pas touchée.
+    if not CustomUser.objects.filter(username='Kabir').exists():
+        return
 
     admin, _ = CustomUser.objects.get_or_create(
         username='admin',
