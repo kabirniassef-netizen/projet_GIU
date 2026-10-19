@@ -6,8 +6,15 @@ FIELD_ROLES = {'agent', 'manager', 'admin'}
 REPORTING_ROLES = {'decision_maker', 'manager', 'admin'}
 
 
+def effective_role(user):
+    """Rôle applicatif réel : un superutilisateur agit toujours comme administrateur."""
+    if not user or not user.is_authenticated:
+        return None
+    return 'admin' if user.is_superuser else user.role
+
+
 def has_role(user, roles):
-    return bool(user and user.is_authenticated and (user.is_superuser or user.role in roles))
+    return bool(user and user.is_authenticated and effective_role(user) in roles)
 
 
 class IsManagerOrAdmin(BasePermission):
@@ -23,9 +30,9 @@ class CanManageIncidents(BasePermission):
 
 
 class CanReportIncident(BasePermission):
-    """Seuls les citoyens peuvent créer un signalement."""
+    """Tout utilisateur connecté peut créer un signalement."""
     def has_permission(self, request, view):
-        return has_role(request.user, {'citizen'})
+        return bool(request.user and request.user.is_authenticated)
 
 
 class CanUpdateInterventionStatus(BasePermission):

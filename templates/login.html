@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - GIU Système de Gestion d'Infrastructure Urbaine</title>
+    <title>Connexion - GIU Système de Gestion des Infrastructures Urbaines</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <style>
         * {
@@ -292,19 +292,22 @@
             <div class="login-header">
                 <div class="login-icon">🏛️</div>
                 <h1>GIU</h1>
-                <p>Système de Gestion d'Infrastructure Urbaine</p>
+                <p>Système de Gestion des Infrastructures Urbaines</p>
             </div>
 
             <div class="login-body">
                 <div id="alert" class="alert"></div>
 
+                {% if show_demo_accounts %}
                 <div class="demo-credentials">
                     <h4>📋 Comptes de Démonstration:</h4>
                     <p><strong>Admin:</strong> <code>admin</code> / <code>admin123</code></p>
                     <p><strong>Citoyen:</strong> <code>citoyen1</code> / <code>password123</code></p>
                     <p><strong>Agent:</strong> <code>agent1</code> / <code>password123</code></p>
                     <p><strong>Manager:</strong> <code>manager1</code> / <code>password123</code></p>
+                    <p><strong>Décideur:</strong> <code>decision1</code> / <code>password123</code></p>
                 </div>
+                {% endif %}
 
                 <form id="loginForm">
                     <div class="form-group">
@@ -465,6 +468,8 @@
             '/dashboard/?module=interventions',
             '/dashboard/?module=decisions',
             '/dashboard/?module=reports',
+            '/dashboard/?module=incidents',
+            '/dashboard/?module=profile',
         ]);
         const requestedDestination = new URLSearchParams(window.location.search).get('next');
         const postLoginDestination = allowedDestinations.has(requestedDestination)
@@ -582,10 +587,10 @@
 
                 showAlert('Connexion réussie! Redirection...', 'success');
 
-                // Rediriger après 1.5 secondes
+                // Courte pause pour afficher la confirmation, puis redirection.
                 setTimeout(() => {
                     window.location.href = postLoginDestination;
-                }, 1500);
+                }, 300);
             } catch (error) {
                 showAlert(error.message || 'Erreur de connexion', 'error');
                 loginBtn.disabled = false;
@@ -601,15 +606,6 @@
                 window.location.href = postLoginDestination;
             }
             loadRememberedUsername();
-        });
-
-        // Permettre la soumission du formulaire avec Entrée
-        usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loginForm.dispatchEvent(new Event('submit'));
-        });
-
-        passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loginForm.dispatchEvent(new Event('submit'));
         });
     </script>
 </body>

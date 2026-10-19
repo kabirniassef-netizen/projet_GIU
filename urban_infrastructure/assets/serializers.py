@@ -3,9 +3,11 @@ from .models import AssetType, Asset, AssetHistory
 
 
 class AssetTypeSerializer(serializers.ModelSerializer):
+    name_display = serializers.CharField(source='get_name_display', read_only=True)
+
     class Meta:
         model = AssetType
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'name_display', 'description']
 
 
 class AssetHistorySerializer(serializers.ModelSerializer):
@@ -14,7 +16,13 @@ class AssetHistorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AssetHistory
-        fields = ['id', 'action', 'action_display', 'description', 'cost', 'performed_by', 'performed_by_username', 'date']
+        fields = ['id', 'asset', 'action', 'action_display', 'description', 'cost', 'performed_by', 'performed_by_username', 'date']
+        read_only_fields = ['performed_by', 'date']
+
+    def validate_cost(self, cost):
+        if cost is not None and cost < 0:
+            raise serializers.ValidationError('Le coût ne peut pas être négatif.')
+        return cost
 
 
 class AssetListSerializer(serializers.ModelSerializer):
@@ -25,7 +33,7 @@ class AssetListSerializer(serializers.ModelSerializer):
         model = Asset
         fields = [
             'id', 'code', 'name', 'asset_type', 'asset_type_name', 'latitude', 'longitude',
-            'location', 'status', 'status_display', 'installed_date'
+            'location', 'brand', 'model', 'status', 'status_display', 'installed_date', 'updated_at'
         ]
 
 
@@ -46,7 +54,8 @@ class AssetDetailSerializer(serializers.ModelSerializer):
 class AssetCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
-        fields = ['code', 'name', 'asset_type', 'description', 'latitude', 'longitude', 'location', 'model', 'brand', 'specifications', 'installed_date']
+        fields = ['id', 'code', 'name', 'asset_type', 'description', 'latitude', 'longitude', 'location', 'model', 'brand', 'specifications', 'status', 'installed_date']
+        read_only_fields = ['id']
 
     def validate(self, attrs):
         coordinates = {

@@ -1,124 +1,129 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tableau de bord — GIU</title>
+  <meta name="theme-color" content="#0b1a30">
+  <title>Espace de travail — GIU</title>
+  <script>
+    // Applique le thème avant le premier rendu pour éviter un flash.
+    (() => { let theme = null; try { theme = localStorage.getItem('giu_theme'); } catch (error) {}
+      if (!theme) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-bs-theme', theme); })();
+  </script>
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body>
-  <nav class="navbar navbar-expand navbar-dark dashboard-nav"><div class="container"><a class="navbar-brand fw-bold" href="/"><i class="fa-solid fa-city me-2"></i>GIU</a><div class="ms-auto d-flex align-items-center gap-3"><span class="text-white-50 small d-none d-md-inline" id="userName"></span><button class="btn btn-outline-light btn-sm" id="logoutButton">Déconnexion</button></div></div></nav>
-  <main class="container py-4 py-lg-5">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4"><div><span class="text-primary fw-semibold small text-uppercase">Espace de travail</span><h1 class="h2 mb-1">Bonjour, <span id="firstName">utilisateur</span></h1><p class="text-secondary mb-0">Suivez l’activité de vos infrastructures.</p></div><div class="d-flex gap-2"><button class="btn btn-outline-primary" id="showIncidentFormButton"><i class="fa-solid fa-plus me-2"></i>Signaler un incident</button><button class="btn btn-primary d-none" id="interventionButton" data-bs-toggle="modal" data-bs-target="#interventionModal"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Planifier</button></div></div>
-    <section class="content-card mb-4 d-none" id="moduleSection" aria-labelledby="moduleTitle"><div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3"><div><h2 class="h4 mb-1" id="moduleTitle"></h2><p class="text-secondary mb-0" id="moduleDescription"></p></div><a class="btn btn-outline-secondary btn-sm align-self-md-start" href="/dashboard/">Retour au tableau de bord</a></div><div id="moduleMessage" class="small mb-3" role="status" aria-live="polite"></div><div id="moduleContent"></div></section>
-    <section class="content-card mb-4 d-none" id="incidentFormSection" aria-labelledby="incidentFormHeading"><div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h5 mb-0" id="incidentFormHeading">Nouveau signalement</h2><button class="btn-close" type="button" id="hideIncidentFormButton" aria-label="Fermer le formulaire"></button></div><form id="incidentForm" enctype="multipart/form-data"><div class="row g-3"><div class="col-md-6"><label class="form-label" for="incidentTitle">Titre</label><input class="form-control" id="incidentTitle" required maxlength="200"></div><div class="col-md-6"><label class="form-label" for="incidentCategory">Catégorie</label><select class="form-select" id="incidentCategory" required></select></div><div class="col-12"><label class="form-label" for="incidentDescription">Description</label><textarea class="form-control" id="incidentDescription" rows="3" required></textarea></div><fieldset class="col-12"><legend class="form-label">Adresse</legend><div class="row g-3"><div class="col-md-4"><label class="form-label" for="incidentRegion">Région</label><input class="form-control" id="incidentRegion" required maxlength="100"></div><div class="col-md-4"><label class="form-label" for="incidentDepartment">Département</label><input class="form-control" id="incidentDepartment" required maxlength="100"></div><div class="col-md-4"><label class="form-label" for="incidentCommune">Commune</label><input class="form-control" id="incidentCommune" required maxlength="100"></div></div></fieldset><div class="col-12"><label class="form-label" for="incidentPhoto">Photo (facultative, 5 Mio maximum)</label><input class="form-control" id="incidentPhoto" type="file" accept="image/*"></div><div class="col-12"><div id="incidentMessage" class="small mb-2" role="status" aria-live="polite"></div><button class="btn btn-primary" type="submit">Envoyer le signalement</button></div></div></form></section>
-    <div id="dashboardOverview">
-    <div class="row g-3 mb-4"><div class="col-6 col-lg-3"><article class="metric-card"><i class="fa-solid fa-triangle-exclamation text-warning"></i><strong id="incidentCount">—</strong><span>Incidents</span></article></div><div class="col-6 col-lg-3"><article class="metric-card"><i class="fa-solid fa-circle-check text-success"></i><strong id="resolvedCount">—</strong><span>Résolus</span></article></div><div class="col-6 col-lg-3"><article class="metric-card"><i class="fa-solid fa-screwdriver-wrench text-primary"></i><strong id="interventionCount">—</strong><span>Interventions</span></article></div><div class="col-6 col-lg-3"><article class="metric-card"><i class="fa-solid fa-building-circle-check text-info"></i><strong id="assetCount">—</strong><span>Actifs urbains</span></article></div></div>
-    <section class="content-card mb-4" aria-live="polite"><div class="d-flex justify-content-between align-items-center mb-2"><h2 class="h5 mb-0">Notifications</h2><span class="text-secondary small" id="notificationCount">Chargement…</span></div><div id="notificationList" class="small"></div></section>
-    <section class="row g-4 mb-4 d-none" id="workQueue" aria-live="polite">
-      <div class="col-lg-6 d-none" id="incidentQueueColumn"><section class="content-card h-100"><h2 class="h5 mb-3">Incidents à traiter</h2><div id="incidentQueue" class="small"></div></section></div>
-      <div class="col-lg-6 d-none" id="interventionQueueColumn"><section class="content-card h-100"><h2 class="h5 mb-3">Interventions à traiter</h2><div id="interventionQueue" class="small"></div></section></div>
-    </section>
-    <div class="row g-4"><div class="col-lg-8"><section class="content-card h-100"><div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="h5 mb-1">Incidents récents</h2><p class="text-secondary small mb-0" id="incidentCaption">Chargement…</p><p class="small mb-0" id="incidentActionMessage" role="status" aria-live="polite"></p></div></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Incident</th><th>Catégorie</th><th>Statut</th><th class="text-end">Date</th><th class="text-end d-none" id="incidentActionsHeading">Actions</th></tr></thead><tbody id="incidentTable"></tbody></table></div></section></div><div class="col-lg-4"><section class="content-card"><h2 class="h5 mb-1">Accès rapides</h2><p class="text-secondary small">Les outils adaptés à votre rôle.</p><div class="quick-links"><a href="/dashboard/?module=users"><i class="fa-solid fa-users"></i><span>Utilisateurs</span><i class="fa-solid fa-chevron-right"></i></a><a href="/dashboard/?module=assets"><i class="fa-solid fa-building"></i><span>Patrimoine urbain</span><i class="fa-solid fa-chevron-right"></i></a><a href="/dashboard/?module=interventions"><i class="fa-solid fa-helmet-safety"></i><span>Interventions</span><i class="fa-solid fa-chevron-right"></i></a><a href="/dashboard/?module=decisions"><i class="fa-solid fa-chart-pie"></i><span>Décisions éclairées</span><i class="fa-solid fa-chevron-right"></i></a><a href="/dashboard/?module=reports"><i class="fa-solid fa-chart-column"></i><span>Rapports & KPI</span><i class="fa-solid fa-chevron-right"></i></a></div></section></div></div>
+<body class="app-body">
+  <a class="visually-hidden-focusable position-absolute m-2 btn btn-primary" href="#moduleSection">Aller au contenu</a>
+  <div class="app-shell">
+    <aside class="app-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="appSidebar" aria-label="Navigation principale">
+      <div class="offcanvas-body">
+        <a class="app-brand" href="/dashboard/" data-route="overview">
+          <span class="app-brand-mark"><i class="fa-solid fa-city" aria-hidden="true"></i></span>
+          <span>GIU<small>Infrastructures urbaines</small></span>
+        </a>
+        <nav class="app-nav" id="appNav"></nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-cta" type="button" id="showIncidentFormButton"><i class="fa-solid fa-plus" aria-hidden="true"></i>Signaler un incident</button>
+          <a class="d-block small text-center mt-3 text-decoration-none" style="color:var(--app-sidebar-text)" href="/suivi/" target="_blank" rel="noopener"><i class="fa-solid fa-magnifying-glass-location me-1" aria-hidden="true"></i>Suivi public d’un signalement</a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <button class="icon-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Ouvrir le menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+        <form class="topbar-search" id="globalSearchForm" role="search">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input class="form-control" type="search" id="globalSearch" placeholder="Rechercher un incident, un lieu, un code GIU-…" aria-label="Recherche globale" autocomplete="off">
+          <kbd class="d-none d-md-inline">/</kbd>
+        </form>
+        <div class="ms-auto d-flex align-items-center gap-2">
+          <button class="icon-btn" type="button" id="themeToggle" aria-label="Changer de thème"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
+          <div class="dropdown">
+            <button class="icon-btn" type="button" id="notificationButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notifications">
+              <i class="fa-regular fa-bell" aria-hidden="true"></i><span class="dot" id="notificationBadge" hidden>0</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notif-menu" aria-labelledby="notificationButton">
+              <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                <strong>Notifications</strong>
+                <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" id="markAllReadButton">Tout marquer comme lu</button>
+              </div>
+              <div class="notif-list" id="notificationList" aria-live="polite"></div>
+            </div>
+          </div>
+          <div class="dropdown">
+            <button class="user-chip" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar" id="userAvatar">?</span>
+              <span class="meta d-none d-md-block"><strong id="userName"></strong><br><small id="userRole"></small></span>
+              <i class="fa-solid fa-chevron-down small text-secondary d-none d-md-inline" aria-hidden="true"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="/dashboard/?module=profile" data-route="profile"><i class="fa-regular fa-user me-2" aria-hidden="true"></i>Mon profil</a></li>
+              <li><a class="dropdown-item" href="/" ><i class="fa-solid fa-house me-2" aria-hidden="true"></i>Site public</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><button class="dropdown-item text-danger" type="button" id="logoutButton"><i class="fa-solid fa-arrow-right-from-bracket me-2" aria-hidden="true"></i>Déconnexion</button></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content" id="moduleSection" tabindex="-1" aria-live="polite"></main>
     </div>
-  </main>
-  <div class="modal fade" id="interventionModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content" id="interventionForm"><div class="modal-header"><h2 class="modal-title fs-5">Planifier une intervention</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label" for="interventionIncident">Incident</label><select class="form-select" id="interventionIncident" required></select></div><div class="mb-3"><label class="form-label" for="interventionAgent">Agent technique</label><select class="form-select" id="interventionAgent" required></select></div><div class="mb-3"><label class="form-label" for="interventionDate">Date et heure</label><input class="form-control" type="datetime-local" id="interventionDate" required></div><div class="mb-3"><label class="form-label" for="interventionDuration">Durée estimée (minutes)</label><input class="form-control" type="number" min="1" value="60" id="interventionDuration" required></div><div class="mb-3"><label class="form-label" for="interventionNotes">Notes</label><textarea class="form-control" id="interventionNotes" rows="3"></textarea></div><div id="interventionMessage" class="small"></div></div><div class="modal-footer"><button class="btn btn-primary" type="submit">Planifier</button></div></form></div></div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script><script src="/static/js/api.js?v=2"></script>
+  </div>
+
+  <div class="offcanvas offcanvas-end detail-drawer" tabindex="-1" id="detailDrawer" aria-labelledby="detailDrawerTitle">
+    <div class="offcanvas-header">
+      <div class="min-w-0"><span class="eyebrow-label" id="detailDrawerKicker"></span><h2 class="offcanvas-title h5 mb-0" id="detailDrawerTitle"></h2></div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+    </div>
+    <div class="offcanvas-body" id="detailDrawerBody"></div>
+  </div>
+
+  <div class="modal fade" id="incidentModal" tabindex="-1" aria-labelledby="incidentFormHeading" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content" id="incidentForm" enctype="multipart/form-data" novalidate>
+        <div class="modal-header">
+          <div><span class="eyebrow-label">Nouveau signalement</span><h2 class="modal-title fs-5" id="incidentFormHeading">Signaler un accident ou un incident</h2></div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer le formulaire"></button>
+        </div>
+        <div class="modal-body">
+          <div class="safety-note"><i class="fa-solid fa-triangle-exclamation mt-1" aria-hidden="true"></i><p class="mb-0">En cas de blessé ou de danger immédiat, contactez d’abord les secours locaux. Ne vous mettez pas en danger pour prendre une photo.</p></div>
+          <div class="row g-3">
+            <div class="col-md-7"><label class="form-label" for="incidentTitle">Titre</label><input class="form-control" id="incidentTitle" name="title" required maxlength="200" placeholder="Ex. Accident à l’intersection de la rue X"></div>
+            <div class="col-md-5"><label class="form-label" for="incidentCategory">Catégorie</label><select class="form-select" id="incidentCategory" name="category" required><option value="">Chargement…</option></select></div>
+            <div class="col-12"><label class="form-label" for="incidentDescription">Que s’est-il passé ?</label><textarea class="form-control" id="incidentDescription" name="description" rows="3" required placeholder="Décrivez les faits, l’heure approximative et les dangers ou obstacles constatés."></textarea></div>
+            <div class="col-12"><label class="form-label" for="incidentAddress">Rue, route, intersection ou point de repère</label>
+              <div class="input-group"><input class="form-control" id="incidentAddress" name="address" maxlength="300" required placeholder="Ex. Route nationale, près du marché">
+                <button class="btn btn-light" type="button" id="locateButton" title="Ajouter ma position GPS"><i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Ma position</span></button></div></div>
+            <div class="col-md-4"><label class="form-label" for="incidentRegion">Région</label><select class="form-select" id="incidentRegion" name="region" required></select></div>
+            <div class="col-md-4"><label class="form-label" for="incidentDepartment">Département</label><select class="form-select" id="incidentDepartment" name="department" required></select></div>
+            <div class="col-md-4"><label class="form-label" for="incidentCommune">Commune</label><select class="form-select" id="incidentCommune" name="commune" required></select></div>
+            <div class="col-12"><label class="form-label" for="incidentPhoto">Photo (facultative, 5 Mio maximum)</label><input class="form-control" id="incidentPhoto" type="file" name="photo" accept="image/*" capture="environment"><div class="photo-preview" id="incidentPhotoPreview" hidden></div></div>
+          </div>
+          <div id="incidentMessage" class="small mt-3" role="status" aria-live="polite"></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Annuler</button><button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Envoyer le signalement</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
   <script>
-    const user = JSON.parse(localStorage.getItem('user_data') || '{}');
-    const managers = ['manager', 'admin'];
-    const canDeleteIncidents = managers.includes(user.role) || user.is_superuser;
-    const items = data => Array.isArray(data) ? data : (data.results || []);
-    const message = (id, text, error=false) => { const node=document.getElementById(id); node.textContent=text; node.className=`small ${error?'text-danger':'text-success'}`; };
-    if (!localStorage.getItem('auth_token')) window.location.href='/login/?next='+encodeURIComponent(window.location.pathname+window.location.search);
-    document.getElementById('userName').textContent = user.username || '';
-    document.getElementById('firstName').textContent = user.username === 'admin'
-      ? 'Mr Kabir Niasse'
-      : user.first_name || user.username || 'utilisateur';
-    if (managers.includes(user.role)) document.getElementById('interventionButton').classList.remove('d-none');
-    document.getElementById('logoutButton').onclick=()=>{localStorage.removeItem('auth_token');localStorage.removeItem('user_data');window.location.href='/';};
-    function showIncidentForm() { const section=document.getElementById('incidentFormSection');section.classList.remove('d-none');section.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('incidentTitle').focus({preventScroll:true}); }
-    document.getElementById('showIncidentFormButton').addEventListener('click',showIncidentForm);
-    document.getElementById('hideIncidentFormButton').addEventListener('click',()=>document.getElementById('incidentFormSection').classList.add('d-none'));
-    if(new URLSearchParams(window.location.search).get('signalement')==='1') showIncidentForm();
-    function renderRecentIncidents(incidentItems) {
-      const table = document.getElementById('incidentTable');
-      const actionsHeading = document.getElementById('incidentActionsHeading');
-      actionsHeading.classList.toggle('d-none', !canDeleteIncidents);
-      table.replaceChildren();
-      if (!incidentItems.length) {
-        const row = table.insertRow();
-        const cell = row.insertCell();
-        cell.colSpan = canDeleteIncidents ? 5 : 4;
-        cell.className = 'text-center text-secondary py-4';
-        cell.textContent = 'Aucun incident à afficher.';
-        return;
-      }
-
-      incidentItems.slice(0, 6).forEach(incident => {
-        const row = table.insertRow();
-        const title = row.insertCell();
-        const strong = document.createElement('strong');
-        strong.textContent = incident.title;
-        title.appendChild(strong);
-        row.insertCell().textContent = incident.category_display || '—';
-
-        const status = row.insertCell();
-        const badge = document.createElement('span');
-        badge.className = `status status-${incident.status}`;
-        badge.textContent = incident.status_display;
-        status.appendChild(badge);
-
-        const date = row.insertCell();
-        date.className = 'text-end text-secondary small';
-        date.textContent = new Date(incident.created_at).toLocaleDateString('fr-FR');
-
-        if (canDeleteIncidents) {
-          const actions = row.insertCell();
-          actions.className = 'text-end';
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'btn btn-sm btn-outline-danger';
-          button.dataset.deleteIncidentId = incident.id;
-          button.setAttribute('aria-label', `Supprimer le signalement : ${incident.title}`);
-          button.title = 'Supprimer le signalement';
-          button.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
-          actions.appendChild(button);
-        }
-      });
-    }
-
-    async function loadDashboard() { try { const [stats, incidents, assets, interventions, categories] = await Promise.all([apiClient.getGlobalStatistics(),apiClient.getIncidents(),apiClient.getAssets(),apiClient.getInterventions(),apiClient.request('/incidents/categories/')]); const incidentItems=items(incidents); document.getElementById('incidentCount').textContent=stats.total_incidents; document.getElementById('resolvedCount').textContent=stats.resolved_incidents; document.getElementById('interventionCount').textContent=items(interventions).length; document.getElementById('assetCount').textContent=items(assets).length; document.getElementById('incidentCaption').textContent=`${incidentItems.length} incident(s) visible(s) selon votre rôle`; renderRecentIncidents(incidentItems); document.getElementById('incidentCategory').innerHTML='<option value="">Choisir une catégorie</option>'+items(categories).map(c=>`<option value="${c.id}">${c.name_display || c.name}</option>`).join(''); if(managers.includes(user.role)){document.getElementById('interventionIncident').innerHTML='<option value="">Choisir un incident</option>'+incidentItems.map(i=>`<option value="${i.id}">${i.title}</option>`).join('');const users=items(await apiClient.getUsers());document.getElementById('interventionAgent').innerHTML='<option value="">Choisir un agent</option>'+users.filter(item=>item.role==='agent').map(item=>`<option value="${item.id}">${item.first_name || item.username} ${item.last_name || ''}</option>`).join('');} } catch(error) { document.getElementById('incidentCaption').textContent='Impossible de charger les données.'; } }
-    document.getElementById('incidentTable').addEventListener('click', async event => {
-      const button = event.target.closest('button[data-delete-incident-id]');
-      if (!button || !canDeleteIncidents) return;
-      const incidentId = button.dataset.deleteIncidentId;
-      if (!window.confirm('Voulez-vous vraiment supprimer définitivement ce signalement ?')) return;
-
-      const feedback = document.getElementById('incidentActionMessage');
-      button.disabled = true;
-      feedback.className = 'small mb-0 text-secondary';
-      feedback.textContent = 'Suppression en cours…';
-      try {
-        await apiClient.deleteIncident(incidentId);
-        feedback.className = 'small mb-0 text-success';
-        feedback.textContent = 'Signalement supprimé.';
-        await loadDashboard();
-      } catch (error) {
-        button.disabled = false;
-        feedback.className = 'small mb-0 text-danger';
-        feedback.textContent = 'La suppression a échoué. Vérifiez vos autorisations et réessayez.';
-      }
-    });
-    async function loadNotifications() { const list=document.getElementById('notificationList'); const count=document.getElementById('notificationCount'); try { const notifications=items(await apiClient.getNotifications()); const unread=notifications.filter(item=>!item.is_read).length; count.textContent=unread ? `${unread} non lue(s)` : 'À jour'; list.replaceChildren(); if(!notifications.length){list.textContent='Aucune notification.';return;} notifications.slice(0,8).forEach(item=>{const row=document.createElement('div');row.className='d-flex justify-content-between align-items-start gap-3 border-top py-2';const text=document.createElement('span');text.textContent=item.message;row.appendChild(text);if(!item.is_read){const button=document.createElement('button');button.type='button';button.className='btn btn-sm btn-outline-secondary flex-shrink-0';button.textContent='Marquer comme lue';button.addEventListener('click',async()=>{try{await apiClient.markNotificationRead(item.id);loadNotifications();}catch(error){count.textContent='Impossible de mettre à jour';}});row.appendChild(button);}list.appendChild(row);});}catch(error){count.textContent='Indisponible';list.textContent='Impossible de charger les notifications.';} }
-    document.getElementById('incidentForm').addEventListener('submit',async event=>{event.preventDefault();const photo=document.getElementById('incidentPhoto').files[0];if(photo&&photo.size>5*1024*1024){message('incidentMessage','La photo ne doit pas dépasser 5 Mio.',true);return;}const formData=new FormData();formData.append('title',incidentTitle.value);formData.append('category',incidentCategory.value);formData.append('description',incidentDescription.value);formData.append('region',incidentRegion.value);formData.append('department',incidentDepartment.value);formData.append('commune',incidentCommune.value);if(photo)formData.append('photo',photo);try{await apiClient.createIncident(formData);message('incidentMessage','Signalement enregistré.');event.target.reset();loadDashboard();}catch(error){message('incidentMessage','Erreur lors de l’envoi.',true);}});
-    document.getElementById('interventionForm').addEventListener('submit',async event=>{event.preventDefault();try{await apiClient.createIntervention({incident:interventionIncident.value,assigned_to:interventionAgent.value,scheduled_date:new Date(interventionDate.value).toISOString(),estimated_duration:Number(interventionDuration.value),notes:interventionNotes.value});message('interventionMessage','Intervention planifiée.');event.target.reset();loadDashboard();}catch(error){message('interventionMessage','Erreur lors de la planification.',true);}});
-    loadDashboard();
-    loadNotifications();
+    if (!localStorage.getItem('auth_token')) window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname + window.location.search);
+    window.GIU_OPEN_REPORT = new URLSearchParams(window.location.search).get('signalement')==='1';
   </script>
-  <script src="/static/js/dashboard-modules.js"></script>
-  <script src="/static/js/dashboard-actions.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/ui.js' %}"></script>
+  <script src="{% static 'js/senegal-geo.js' %}"></script>
+  <script src="{% static 'js/dashboard-app.js' %}"></script>
 </body>
 </html>

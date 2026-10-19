@@ -165,8 +165,8 @@ projet_GIU/
 ## 👥 Rôles Utilisateurs
 
 ### 1. **Citoyen**
-- Signaler des anomalies urbaines
-- Joindre des photos et renseigner la région, le département et la commune
+- Signaler un accident de la route ou une anomalie urbaine après connexion ou création d'un compte citoyen
+- Décrire les faits, préciser le point de repère, la région, le département et la commune, et joindre une photo facultative
 - Suivre le statut de ses signalements en temps réel
 - Consulter les statistiques publiques
 - Participer aux consultations citoyennes
@@ -431,3 +431,30 @@ Propriété de la municipalité. Tous droits réservés.
 **Dernière mise à jour:** 2026-06-30  
 **Framework:** Django 6.0.6  
 **État:** environnement local et tests prêts après configuration; déploiement de production restant à réaliser.
+
+## Espace de travail (v2)
+
+L'espace `/dashboard/` est une application monopage : navigation par rôle sans
+rechargement, filtres et recherche synchronisés dans l'URL, tiroirs de détail,
+thème clair/sombre et affichage mobile.
+
+| Rôle | Fonctionnalités principales |
+|---|---|
+| Citoyen | Signalement avec photo et position GPS, suivi de ses signalements (code `GIU-XXXXXXXX`) |
+| Agent | File de ses interventions, démarrage, clôture avec compte rendu et photo, journal d'entretien |
+| Gestionnaire / Admin | Validation/rejet, priorisation, planification, réaffectation, annulation puis replanification, gestion des usagers et comptes (création, rôle, désactivation, mot de passe), export CSV |
+| Décideur | Indicateurs, points d'attention, rapports périodiques, export CSV |
+
+Pages publiques : `/signaler/` (signalement sans compte) et `/suivi/`
+(suivi d'un signalement à partir de son code).
+
+Variables d'environnement ajoutées :
+
+```env
+SHOW_DEMO_ACCOUNTS=False      # affiche les comptes de démo sur /login/ (par défaut = DEBUG)
+SERVE_MEDIA=False             # sert /media/ sans DEBUG (démo sans stockage objet)
+LOGIN_THROTTLE_RATE=20/minute # limite anti force brute sur /api/auth/login/
+```
+
+Après mise à jour : `python manage.py migrate` (ajoute le code de suivi aux
+signalements existants et les types d'équipements).

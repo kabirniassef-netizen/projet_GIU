@@ -1,0 +1,40 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Signalez gratuitement un incident routier sans créer de compte.">
+  <meta name="theme-color" content="#2563eb">
+  <title>Signaler un incident — GIU</title>
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/public.css' %}">
+</head>
+<body class="public-body">
+  <nav class="public-nav">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="public-brand" href="/"><span><i class="fa-solid fa-city" aria-hidden="true"></i></span><span>GIU — Signalement citoyen</span></a>
+      <a class="btn btn-sm btn-light" href="/suivi/"><i class="fa-solid fa-magnifying-glass-location me-1" aria-hidden="true"></i>Suivre un signalement</a>
+    </div>
+  </nav>
+  <main class="container pb-5">
+    <div class="mx-auto" style="max-width: 760px">
+      <h1 class="h2 fw-bold mb-2">Signaler un incident routier</h1>
+      <p class="text-secondary mb-3">Sans compte, en moins de deux minutes. Vous recevrez un code pour suivre le traitement.</p>
+      <div class="public-steps" aria-hidden="true"><span><b>1</b>Décrivez</span><span><b>2</b>Localisez</span><span><b>3</b>Recevez votre code de suivi</span></div>
+      <div class="alert alert-warning d-flex gap-2 small" role="note"><i class="fa-solid fa-truck-medical mt-1" aria-hidden="true"></i><span>En cas de blessé ou de danger immédiat, appelez d’abord les secours. Ne vous mettez pas en danger pour prendre une photo.</span></div>
+
+      <div class="public-card">
+        {% include 'partials/incident_report_form.html' %}
+      </div>
+      <p class="text-center mt-3 mb-0 small"><a href="/">Retour à l’accueil</a> · <a href="/login/">Espace agents et citoyens inscrits</a></p>
+    </div>
+  </main>
+  <script src="{% static 'js/senegal-geo.js' %}" defer></script>
+  <script src="{% static 'js/public-report.js' %}" defer></script>
+</body>
+</html>

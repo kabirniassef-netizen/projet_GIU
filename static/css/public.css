@@ -1,0 +1,32 @@
+/* Pages publiques : signalement citoyen et suivi. */
+:root { --pub-primary: #2563eb; --pub-ink: #0f1f35; --pub-muted: #61718a; --pub-border: #e3e9f1; }
+body.public-body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: radial-gradient(1200px 500px at 10% -10%, #dbe7ff 0%, transparent 60%), radial-gradient(900px 400px at 100% 0%, #efe4ff 0%, transparent 55%), #f5f7fb; color: var(--pub-ink); min-height: 100vh; }
+.public-nav { padding: 1rem 0; }
+.public-brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 700; color: var(--pub-ink); text-decoration: none; }
+.public-brand span:first-child { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #7c3aed); color: #fff; }
+.public-card { background: #fff; border: 1px solid var(--pub-border); border-radius: 18px; box-shadow: 0 10px 40px rgba(15, 31, 53, .07); padding: clamp(1.25rem, 3vw, 2rem); }
+.public-card .form-control, .public-card .form-select { border-radius: 10px; padding: .65rem .85rem; }
+.public-card .form-label { font-weight: 600; font-size: .88rem; }
+.public-steps { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.public-steps span { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--pub-muted); background: #fff; border: 1px solid var(--pub-border); border-radius: 99px; padding: .3rem .75rem; }
+.public-steps b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #e8f0fe; color: var(--pub-primary); font-size: .72rem; }
+.btn { border-radius: 10px; font-weight: 600; }
+.btn-primary { --bs-btn-bg: var(--pub-primary); --bs-btn-border-color: var(--pub-primary); }
+.photo-preview { display: flex; align-items: center; gap: .8rem; margin-top: .6rem; }
+.photo-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid var(--pub-border); }
+.success-panel { text-align: center; padding: 1rem 0; }
+.success-icon { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 1rem; display: grid; place-items: center; background: #e3f6ee; color: #0f8a5f; font-size: 1.6rem; }
+.tracking-code { display: inline-flex; align-items: center; gap: .6rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 1.35rem; font-weight: 700; letter-spacing: .06em; background: #f3f6fb; border: 1px dashed #b9c6d8; padding: .6rem 1rem; border-radius: 12px; }
+.stepper { display: flex; gap: .4rem; list-style: none; padding: 0; margin: 1rem 0 0; }
+.stepper li { flex: 1; text-align: center; font-size: .75rem; color: var(--pub-muted); }
+.stepper li::before { content: ''; display: block; height: 6px; border-radius: 99px; background: var(--pub-border); margin-bottom: .45rem; }
+.stepper li.done::before { background: #0f8a5f; }
+.stepper li.current { color: var(--pub-ink); font-weight: 600; }
+.stepper li.current::before { background: var(--pub-primary); }
+.stepper.rejected li.current::before { background: #c0262d; }
+.timeline { list-style: none; padding: 0; margin: 0; }
+.timeline li { position: relative; padding: 0 0 .9rem 1.5rem; font-size: .9rem; }
+.timeline li::before { content: ''; position: absolute; left: .32rem; top: .35rem; bottom: -.2rem; width: 2px; background: var(--pub-border); }
+.timeline li:last-child::before { display: none; }
+.timeline li::after { content: ''; position: absolute; left: 0; top: .3rem; width: .72rem; height: .72rem; border-radius: 50%; background: #fff; border: 2px solid var(--pub-primary); }
+.timeline small { color: var(--pub-muted); }

@@ -3,6 +3,7 @@ Django settings for urban_infrastructure project.
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -148,6 +149,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Accélère fortement la suite de tests (le hachage PBKDF2 domine sinon le temps d'exécution).
+if len(sys.argv) > 1 and sys.argv[1] == 'test':
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
 # Internationalization
 LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
@@ -162,6 +167,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
+SERVE_MEDIA = env_bool('SERVE_MEDIA', False)
+# Affiche les comptes de démonstration sur la page de connexion (jamais par défaut en production).
+SHOW_DEMO_ACCOUNTS = env_bool('SHOW_DEMO_ACCOUNTS', DEBUG)
 
 # Email notifications
 EMAIL_BACKEND = os.getenv(
@@ -202,8 +210,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'urban_infrastructure.pagination.StandardPagination',
     'PAGE_SIZE': 50,
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/hour',
+        'login': os.getenv('LOGIN_THROTTLE_RATE', '20/minute'),
+    },
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
