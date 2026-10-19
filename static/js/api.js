@@ -1,5 +1,33 @@
-// Configuration API
+// Client HTTP partagé par toutes les pages de GIU.
 const API_BASE_URL = '/api';
+
+class ApiError extends Error {
+  constructor(status, data) {
+    super(ApiError.describe(status, data));
+    this.status = status;
+    this.data = data;
+  }
+
+  // Transforme les erreurs DRF ({champ: [messages]}) en phrase lisible.
+  static describe(status, data) {
+    if (data && typeof data === 'object') {
+      if (typeof data.detail === 'string') return data.detail;
+      if (typeof data.error === 'string') return data.error;
+      const messages = Object.entries(data).flatMap(([field, value]) => {
+        const list = Array.isArray(value) ? value : [value];
+        return list
+          .filter(item => typeof item === 'string')
+          .map(item => (field === 'non_field_errors' ? item : `${field} : ${item}`));
+      });
+      if (messages.length) return messages.join(' ');
+    }
+    if (status === 0) return 'Impossible de joindre le serveur. Vérifiez votre connexion.';
+    if (status === 403) return 'Vous n’avez pas les droits nécessaires pour cette action.';
+    if (status === 404) return 'Élément introuvable.';
+    if (status === 429) return 'Trop de tentatives. Patientez un instant puis réessayez.';
+    return `Erreur du serveur (${status}). Réessayez.`;
+  }
+}
 
 class APIClient {
   constructor() {
@@ -11,246 +39,185 @@ class APIClient {
     localStorage.setItem('auth_token', token);
   }
 
-  async getHeaders() {
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (this.token) {
-      headers['Authorization'] = `Token ${this.token}`;
-    }
-    
+  clearSession() {
+    this.token = null;
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+  }
+
+  headers(body) {
+    const headers = {};
+    if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    if (this.token) headers.Authorization = `Token ${this.token}`;
     return headers;
   }
 
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const headers = await this.getHeaders();
-    if (options.body instanceof FormData) {
-      delete headers['Content-Type'];
-    }
-    
+    const { raw = false, ...fetchOptions } = options;
     const config = {
-      ...options,
-      headers: { ...headers, ...options.headers }
+      ...fetchOptions,
+      headers: { ...this.headers(fetchOptions.body), ...fetchOptions.headers },
     };
 
+    let response;
     try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Unauthorized - clear token and redirect
-          this.token = null;
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login.html';
-        }
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-      
-      if (response.status === 204) return null;
-      return await response.json();
+      response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+      throw new ApiError(0, null);
+    }
+
+    if (response.status === 401 && this.token) {
+      // Session expirée ou révoquée : retour à la connexion en conservant la page.
+      this.clearSession();
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login/?next=${next}`;
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new ApiError(response.status, data);
+    }
+    if (raw) return response;
+    if (response.status === 204) return null;
+    return response.json();
+  }
+
+  get(endpoint, params) {
+    const query = params ? APIClient.query(params) : '';
+    return this.request(`${endpoint}${query}`);
+  }
+
+  post(endpoint, data = {}) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    });
+  }
+
+  patch(endpoint, data = {}) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    });
+  }
+
+  delete(endpoint) {
+    return this.request(endpoint, { method: 'DELETE' });
+  }
+
+  static query(params) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, value);
+    });
+    const text = search.toString();
+    return text ? `?${text}` : '';
+  }
+
+  // Télécharge un fichier protégé par token (les liens <a> ne transmettent pas l'en-tête).
+  async download(endpoint, params, fallbackName) {
+    const response = await this.request(`${endpoint}${APIClient.query(params || {})}`, { raw: true });
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = match ? match[1] : fallbackName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  // Authentification
+  async logout() {
+    try {
+      if (this.token) await this.post('/auth/logout/');
+    } finally {
+      this.clearSession();
     }
   }
 
   // Users
-  async getUsers() {
-    return this.request('/users/users/');
-  }
-
-  async getCurrentUser() {
-    return this.request('/users/users/me/');
-  }
-
-  async createUser(userData) {
-    return this.request('/users/users/', {
-      method: 'POST',
-      body: JSON.stringify(userData)
-    });
+  getUsers(params) { return this.get('/users/users/', params); }
+  getUser(id) { return this.get(`/users/users/${id}/`); }
+  getUserStats() { return this.get('/users/users/stats/'); }
+  getCurrentUser() { return this.get('/users/users/me/'); }
+  updateProfile(data) { return this.patch('/users/users/me/', data); }
+  changePassword(data) { return this.post('/users/users/change_password/', data); }
+  createUser(data) { return this.post('/users/users/', data); }
+  updateUser(id, data) { return this.patch(`/users/users/${id}/`, data); }
+  deleteUser(id) { return this.delete(`/users/users/${id}/`); }
+  toggleUserActive(id) { return this.post(`/users/users/${id}/toggle_active/`); }
+  resetUserPassword(id, newPassword) {
+    return this.post(`/users/users/${id}/reset_password/`, { new_password: newPassword });
   }
 
   // Incidents
-  async getIncidents() {
-    return this.request('/incidents/incidents/');
+  getCategories() { return this.get('/incidents/categories/'); }
+  getIncidents(params) { return this.get('/incidents/incidents/', params); }
+  getIncident(id) { return this.get(`/incidents/incidents/${id}/`); }
+  deleteIncident(id) { return this.delete(`/incidents/incidents/${id}/`); }
+  createIncident(data) { return this.post('/incidents/incidents/', data); }
+  updateIncident(id, data) { return this.patch(`/incidents/incidents/${id}/`, data); }
+  updateIncidentStatus(id, status, comment = '') {
+    return this.post(`/incidents/incidents/${id}/update_status/`, { status, comment });
   }
-
-  async getIncident(id) {
-    return this.request(`/incidents/incidents/${id}/`);
+  commentIncident(id, comment) {
+    return this.post(`/incidents/incidents/${id}/comment/`, { comment });
   }
-
-  async deleteIncident(id) {
-    return this.request(`/incidents/incidents/${id}/`, { method: 'DELETE' });
+  getMyIncidents() { return this.get('/incidents/incidents/my_incidents/'); }
+  exportIncidents(params) {
+    return this.download('/incidents/incidents/export/', params, 'incidents.csv');
   }
-
-  async createIncident(data) {
-    return this.request('/incidents/incidents/', {
-      method: 'POST',
-      body: data instanceof FormData ? data : JSON.stringify(data)
-    });
-  }
-
-  async updateIncidentStatus(id, status, comment = '') {
-    return this.request(`/incidents/incidents/${id}/update_status/`, {
-      method: 'POST',
-      body: JSON.stringify({ status, comment })
-    });
-  }
-
-  async getMyIncidents() {
-    return this.request('/incidents/incidents/my_incidents/');
-  }
+  trackIncident(code) { return this.get(`/incidents/track/${encodeURIComponent(code)}/`); }
 
   // Assets
-  async getAssets() {
-    return this.request('/assets/assets/');
-  }
-
-  async getAsset(id) {
-    return this.request(`/assets/assets/${id}/`);
-  }
-
-  async createAsset(data) {
-    return this.request('/assets/assets/', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
+  getAssetTypes() { return this.get('/assets/types/'); }
+  getAssets(params) { return this.get('/assets/assets/', params); }
+  getAsset(id) { return this.get(`/assets/assets/${id}/`); }
+  getAssetStats() { return this.get('/assets/assets/stats/'); }
+  createAsset(data) { return this.post('/assets/assets/', data); }
+  updateAsset(id, data) { return this.patch(`/assets/assets/${id}/`, data); }
+  deleteAsset(id) { return this.delete(`/assets/assets/${id}/`); }
+  addAssetHistory(data) { return this.post('/assets/history/', data); }
 
   // Interventions
-  async getInterventions() {
-    return this.request('/interventions/interventions/');
+  getInterventions(params) { return this.get('/interventions/interventions/', params); }
+  getIntervention(id) { return this.get(`/interventions/interventions/${id}/`); }
+  createIntervention(data) { return this.post('/interventions/interventions/', data); }
+  updateIntervention(id, data) { return this.patch(`/interventions/interventions/${id}/`, data); }
+  updateInterventionStatus(id, status, comment = '', photo = null) {
+    if (photo) {
+      const form = new FormData();
+      form.append('status', status);
+      form.append('comment', comment);
+      form.append('photo', photo);
+      return this.post(`/interventions/interventions/${id}/update_status/`, form);
+    }
+    return this.post(`/interventions/interventions/${id}/update_status/`, { status, comment });
   }
-
-  async getIntervention(id) {
-    return this.request(`/interventions/interventions/${id}/`);
-  }
-
-  async createIntervention(data) {
-    return this.request('/interventions/interventions/', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async updateInterventionStatus(id, status, comment = '') {
-    return this.request(`/interventions/interventions/${id}/update_status/`, {
-      method: 'POST',
-      body: JSON.stringify({ status, comment })
-    });
-  }
-
-  async getMyInterventions() {
-    return this.request('/interventions/interventions/my_interventions/');
-  }
+  getMyInterventions() { return this.get('/interventions/interventions/my_interventions/'); }
 
   // Reports
-  async getGlobalStatistics() {
-    return this.request('/reports/reports/global_statistics/');
-  }
-
-  async getIncidentsByStatus() {
-    return this.request('/reports/reports/incidents_by_status/');
-  }
-
-  async getIncidentsByCategory() {
-    return this.request('/reports/reports/incidents_by_category/');
-  }
-
-  async getKPISummary() {
-    return this.request('/reports/reports/kpi_summary/');
-  }
-
-  async getRecentIncidents() {
-    return this.request('/reports/reports/recent_incidents/');
-  }
-
-  async getPendingInterventions() {
-    return this.request('/reports/reports/pending_interventions/');
-  }
+  getGlobalStatistics() { return this.get('/reports/reports/global_statistics/'); }
+  getDashboardSummary() { return this.get('/reports/reports/dashboard_summary/'); }
+  generateReport(data) { return this.post('/reports/reports/generate_monthly_report/', data); }
+  getReports() { return this.get('/reports/reports/'); }
+  deleteReport(id) { return this.delete(`/reports/reports/${id}/`); }
+  getKpiMetrics() { return this.get('/reports/metrics/'); }
+  snapshotKpi() { return this.post('/reports/reports/snapshot_kpi/'); }
 
   // Notifications
-  async getNotifications() {
-    return this.request('/notifications/');
-  }
-
-  async markNotificationRead(id) {
-    return this.request(`/notifications/${id}/`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_read: true })
-    });
-  }
+  getNotifications(params) { return this.get('/notifications/', params); }
+  getUnreadNotificationCount() { return this.get('/notifications/unread_count/'); }
+  markNotificationRead(id) { return this.patch(`/notifications/${id}/`, { is_read: true }); }
+  markAllNotificationsRead() { return this.post('/notifications/mark_all_read/'); }
 }
 
 // Global API client instance
 const apiClient = new APIClient();
 
-// Utility functions
-function showNotification(message, type = 'success') {
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-  
-  setTimeout(() => {
-    notification.remove();
-  }, 5000);
-}
-
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-function getStatusBadge(status) {
-  const statusMap = {
-    'created': 'En attente',
-    'validated': 'Validé',
-    'planned': 'Planifié',
-    'in_progress': 'En cours',
-    'resolved': 'Résolu',
-    'rejected': 'Rejeté',
-    'pending': 'En attente',
-    'assigned': 'Assignée',
-    'completed': 'Complétée',
-    'cancelled': 'Annulée'
-  };
-  
-  const badgeClass = `badge badge-${status.replace('_', '-')}`;
-  return `<span class="${badgeClass}">${statusMap[status] || status}</span>`;
-}
-
-function getPriorityBadge(priority) {
-  const priorityMap = {
-    'low': 'Basse',
-    'medium': 'Moyenne',
-    'high': 'Haute',
-    'urgent': 'Urgente'
-  };
-  
-  const colorMap = {
-    'low': 'info',
-    'medium': 'warning',
-    'high': 'danger',
-    'urgent': 'danger'
-  };
-  
-  const badgeClass = `badge badge-${colorMap[priority]}`;
-  return `<span class="${badgeClass}">${priorityMap[priority]}</span>`;
-}
-
 // Export for use in other files
+window.ApiError = ApiError;
 window.APIClient = APIClient;
 window.apiClient = apiClient;
-window.showNotification = showNotification;
-window.formatDate = formatDate;
-window.getStatusBadge = getStatusBadge;
-window.getPriorityBadge = getPriorityBadge;

@@ -13,11 +13,10 @@ class IncidentAdmin(admin.ModelAdmin):
     list_display = ('id', 'category', 'reporter', 'status', 'priority', 'created_at')
     list_filter = ('status', 'priority', 'category', 'created_at')
     search_fields = ('title', 'description', 'reporter__username')
-    readonly_fields = ('created_at', 'updated_at', 'address')
+    readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         (None, {'fields': ('title', 'description', 'category', 'reporter')}),
-        ('Location', {'fields': ('region', 'department', 'commune')}),
-        ('Ancienne adresse (signalements historiques)', {'fields': ('address',)}),
+        ('Lieu', {'fields': ('address', 'region', 'department', 'commune')}),
         ('Status', {'fields': ('status', 'priority')}),
         ('Photo', {'fields': ('photo',)}),
         ('Dates', {'fields': ('created_at', 'updated_at')}),

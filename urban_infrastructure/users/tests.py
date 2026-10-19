@@ -1,9 +1,14 @@
 from datetime import timedelta
+from io import BytesIO
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
+from PIL import Image
 
 from load_test_data import populate_test_data
 from urban_infrastructure.incidents.models import Incident, IncidentCategory
@@ -25,7 +30,7 @@ class ProjectBootstrapTests(TestCase):
 
         home = client.get('/')
         self.assertEqual(home.status_code, 200)
-        self.assertContains(home, 'href="/dashboard/?signalement=1"')
+        self.assertContains(home, 'href="/signaler/"')
         for module in ('users', 'assets', 'interventions', 'decisions', 'reports'):
             self.assertContains(home, f'href="/dashboard/?module={module}"')
         self.assertNotContains(home, 'href="/api/incidents/"')
@@ -34,11 +39,30 @@ class ProjectBootstrapTests(TestCase):
         self.assertNotContains(home, 'href="/api/interventions/"')
         self.assertNotContains(home, 'href="/api/reports/"')
 
+        public_report = client.get('/signaler/')
+        self.assertEqual(public_report.status_code, 200)
+        self.assertContains(public_report, 'id="publicIncidentForm"')
+        self.assertNotContains(public_report, 'reporter_phone')
+        self.assertNotContains(public_report, 'reporter_name')
+        self.assertNotContains(public_report, 'Vos coordonnées')
+        self.assertNotContains(public_report, 'id="incidentAddress"')
+        self.assertContains(public_report, 'id="incidentRegion"')
+        self.assertContains(public_report, 'id="incidentDepartment"')
+        self.assertContains(public_report, 'id="incidentCommune"')
+        self.assertRedirects(
+            client.get('/dashboard/?signalement=1'),
+            '/signaler/',
+            fetch_redirect_response=False,
+        )
+
         dashboard = client.get('/dashboard/')
         self.assertEqual(dashboard.status_code, 200)
         self.assertContains(dashboard, 'id="moduleSection"')
         self.assertContains(dashboard, 'id="incidentForm" enctype="multipart/form-data"')
         self.assertContains(dashboard, 'id="incidentPhoto" type="file"')
+        self.assertContains(dashboard, 'id="incidentAddress"')
+        self.assertNotContains(dashboard, '<th>Lieu</th>')
+        self.assertContains(dashboard, 'En cas de blessé ou de danger immédiat')
         self.assertContains(
             dashboard,
             "new URLSearchParams(window.location.search).get('signalement')==='1'",
@@ -170,7 +194,139 @@ class ProjectBusinessFlowTests(TestCase):
             'Vitesse',
             'Panne',
             'Mauvaise visibilité',
+            'Accident de la route',
         }.issubset(labels))
+
+    def test_citizen_can_report_a_road_accident_with_a_precise_location(self):
+        self.client.force_login(self.citizen)
+        category = IncidentCategory.objects.get(name=IncidentCategory.ACCIDENT)
+
+        response = self.client.post('/api/incidents/incidents/', {
+            'title': 'Accident près du marché',
+            'description': 'Collision observée vers 14 h, circulation ralentie.',
+            'category': category.id,
+            'address': 'Route nationale, près du marché central',
+            'region': 'Dakar',
+            'department': 'Dakar',
+            'commune': 'Dakar',
+        })
+
+        self.assertEqual(response.status_code, 201)
+        incident_id = response.json()['id']
+        self.assertEqual(response.json()['address'], 'Route nationale, près du marché central')
+        details = self.client.get(f'/api/incidents/incidents/{incident_id}/')
+        self.assertEqual(details.status_code, 200)
+        self.assertEqual(details.json()['category_display'], 'Accident de la route')
+        self.assertEqual(details.json()['address'], 'Route nationale, près du marché central')
+        incident_list = self.client.get('/api/incidents/incidents/my_incidents/')
+        self.assertEqual(incident_list.status_code, 200)
+        self.assertEqual(incident_list.json()[0]['address'], 'Route nationale, près du marché central')
+        self.assertEqual(incident_list.json()[0]['title'], 'Accident près du marché')
+        self.assertEqual(
+            incident_list.json()[0]['description'],
+            'Collision observée vers 14 h, circulation ralentie.',
+        )
+
+    def test_authenticated_non_citizen_can_submit_from_the_reporting_form(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post('/api/incidents/incidents/', {
+            'title': 'Signalement envoyé depuis le tableau de bord',
+            'description': 'Obstacle constaté sur la chaussée.',
+            'category': self.category.id,
+            'region': 'Dakar',
+            'department': 'Dakar',
+            'commune': 'Dakar',
+        })
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            Incident.objects.get(pk=response.json()['id']).reporter,
+            self.manager,
+        )
+
+        self.client.logout()
+        anonymous_response = self.client.post('/api/incidents/incidents/', {
+            'title': 'Signalement sans compte',
+            'description': 'Ce signalement ne doit pas être créé.',
+            'category': self.category.id,
+            'region': 'Dakar',
+            'department': 'Dakar',
+            'commune': 'Dakar',
+        })
+        self.assertEqual(anonymous_response.status_code, 401)
+
+    def test_anonymous_citizen_can_report_an_incident_without_contact_details(self):
+        categories = self.client.get('/api/incidents/categories/')
+        self.assertEqual(categories.status_code, 200)
+        self.assertTrue(categories.json()['results'])
+
+        category = IncidentCategory.objects.get(name=IncidentCategory.ACCIDENT)
+        response = self.client.post('/api/incidents/public/', {
+            'title': 'Accident près du marché',
+            'description': 'Collision observée, circulation ralentie.',
+            'category': category.id,
+            'region': 'Dakar',
+            'department': 'Dakar',
+            'commune': 'Dakar',
+        })
+
+        self.assertEqual(response.status_code, 201)
+        incident = Incident.objects.get(pk=response.json()['id'])
+        self.assertIsNone(incident.reporter)
+        self.assertEqual(incident.address, '')
+        self.assertEqual(incident.region, 'Dakar')
+        self.assertEqual(incident.department, 'Dakar')
+        self.assertEqual(incident.commune, 'Dakar')
+        self.assertEqual(incident.status, Incident.CREATED)
+        self.assertIsNone(response.json()['reporter'])
+        self.assertEqual(
+            self.client.get('/api/incidents/incidents/').status_code,
+            401,
+        )
+
+        invalid_response = self.client.post('/api/incidents/public/', {
+            'title': 'Incident invalide',
+            'category': category.id,
+            'address': 'Dakar',
+            'region': 'Dakar',
+            'department': 'Dakar',
+            'commune': 'Dakar',
+        })
+        self.assertEqual(invalid_response.status_code, 400)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend')
+    def test_anonymous_citizen_can_report_with_photo_when_email_delivery_fails(self):
+        image_bytes = BytesIO()
+        Image.new('RGB', (2, 2), color='red').save(image_bytes, format='JPEG')
+        image = SimpleUploadedFile(
+            'incident.jfif',
+            image_bytes.getvalue(),
+            content_type='image/jpeg',
+        )
+        category = IncidentCategory.objects.get(name=IncidentCategory.BREAKDOWN)
+
+        with TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                with patch(
+                    'django.core.mail.backends.smtp.EmailBackend.send_messages',
+                    side_effect=OSError('SMTP server unavailable'),
+                ) as send_messages:
+                    response = self.client.post('/api/incidents/public/', {
+                        'title': 'Une voiture qui s’arrête',
+                        'description': 'Manque d’entretien.',
+                        'category': category.id,
+                        'region': 'DK',
+                        'department': 'PA',
+                        'commune': 'PA',
+                        'photo': image,
+                    })
+
+                self.assertEqual(response.status_code, 201, response.content)
+                send_messages.assert_called()
+                incident = Incident.objects.get(pk=response.json()['id'])
+                self.assertTrue(incident.photo)
+                self.assertTrue(incident.photo.name.endswith('.jfif'))
 
     def test_manager_can_update_incident_status_and_public_stats_are_available(self):
         self.client.force_login(self.citizen)

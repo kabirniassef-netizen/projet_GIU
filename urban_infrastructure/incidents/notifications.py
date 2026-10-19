@@ -48,10 +48,11 @@ def _template_parameters(incident, template, event):
         'category': incident.category.get_name_display(),
         'priority': incident.get_priority_display(),
         'address': ', '.join(filter(None, (
+            incident.address,
             incident.commune,
             incident.department,
             incident.region,
-        ))) or incident.address or 'Non renseignée',
+        ))) or 'Non renseignée',
         'status': incident.get_status_display(),
     }
     defaults = (

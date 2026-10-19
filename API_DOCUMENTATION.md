@@ -61,17 +61,30 @@ curl -X POST http://localhost:8000/api/incidents/incidents/ \
   -H "Authorization: Token votre_token" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Nid-de-poule rue de la Paix",
-    "description": "Grande dégradation de la chaussée",
-    "category": 2,
-    "region": "Île-de-France",
-    "department": "Paris",
-    "commune": "Paris",
-    "priority": "high"
+    "title": "Accident près du marché",
+    "description": "Collision observée vers 14 h, circulation ralentie.",
+    "category": 13,
+    "address": "Route nationale, près du marché central",
+    "region": "Dakar",
+    "department": "Dakar",
+    "commune": "Dakar"
   }'
 ```
 
-Les catégories comprennent notamment « Imprudence », « Vitesse », « Panne » et « Mauvaise visibilité ». La région, le département et la commune sont obligatoires ; aucune latitude ni longitude n’est demandée pour un signalement.
+Un citoyen connecté peut envoyer le formulaire depuis le bouton « Signaler un incident ». Il est redirigé vers la connexion ou la création d’un compte si nécessaire. Choisissez la catégorie « Accident de la route », indiquez le point de repère précis dans `address` et renseignez la région, le département et la commune. Une photo est facultative et limitée à 5 Mio. Utilisez `GET /api/incidents/categories/` pour récupérer les identifiants de catégories ; les identifiants peuvent varier entre les bases. Pour joindre une photo via l’API, envoyez les champs en `multipart/form-data`.
+
+Un citoyen sans compte peut aussi signaler depuis son téléphone sur `/signaler/`, sans fournir de coordonnées personnelles. Le formulaire demande la région, le département et la commune pour localiser l’incident; une photo est facultative. L’endpoint public `POST /api/incidents/public/` accepte également une adresse dans le champ `address`. Les catégories sont consultables sans authentification avec `GET /api/incidents/categories/`. Les signalements publics sont limités à 20 envois par heure et par adresse IP.
+
+```bash
+curl -X POST http://localhost:8000/api/incidents/public/ \
+  -F "title=Accident près du marché" \
+  -F "description=Collision observée, circulation ralentie." \
+  -F "category=13" \
+  -F "address=Route nationale, près du marché central" \
+  -F "region=Dakar" \
+  -F "department=Dakar" \
+  -F "commune=Dakar"
+```
 
 ### 2. Lister les Incidents
 

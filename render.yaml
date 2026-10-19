@@ -21,6 +21,8 @@ services:
         fromDatabase:
           name: giu-database
           property: connectionString
+      - key: SERVE_MEDIA
+        value: "True"
       - key: SECURE_SSL_REDIRECT
         value: "True"
       - key: SESSION_COOKIE_SECURE

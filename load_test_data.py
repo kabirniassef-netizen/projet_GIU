@@ -28,6 +28,7 @@ def populate_test_data():
             password='admin123',
             first_name='Kabir',
             last_name='Niasse',
+            role='admin',
         )
         print('  [OK] Administrateur de démonstration créé')
     else:

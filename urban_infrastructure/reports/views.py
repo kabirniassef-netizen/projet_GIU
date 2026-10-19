@@ -1,15 +1,29 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Count, Q, Avg, Sum
+from django.utils import timezone
+from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta
+from .analytics import (
+    asset_summary,
+    average_resolution_hours,
+    incident_summary,
+    intervention_summary,
+)
 from .models import KPIMetrics, Report
 from .serializers import KPIMetricsSerializer, ReportSerializer
 from urban_infrastructure.incidents.models import Incident
 from urban_infrastructure.interventions.models import Intervention
 from urban_infrastructure.assets.models import Asset
-from urban_infrastructure.users.permissions import CanConsultReports, IsManagerOrAdmin
+from urban_infrastructure.assets.models import AssetHistory
+from urban_infrastructure.users.models import CustomUser
+from urban_infrastructure.users.permissions import (
+    CanConsultReports,
+    IsManagerOrAdmin,
+    effective_role,
+)
 
 
 class KPIMetricsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -52,6 +66,8 @@ class ReportViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'global_statistics':
             return [AllowAny()]
+        if self.action == 'dashboard_summary':
+            return [IsAuthenticated()]
         if self.action in [
             'list', 'retrieve', 'generate_dashboard', 'generate_monthly_report',
         ]:
@@ -121,31 +137,118 @@ class ReportViewSet(viewsets.ModelViewSet):
         
         return Response(dashboard_data)
     
+    @action(detail=False, methods=['get'])
+    def dashboard_summary(self, request):
+        """Indicateurs du tableau de bord, limités au périmètre de l'utilisateur."""
+        user = request.user
+        role = effective_role(user)
+        incidents = Incident.objects.all()
+        interventions = Intervention.objects.all()
+        if role == 'citizen':
+            incidents = incidents.filter(reporter=user)
+            interventions = interventions.none()
+        elif role == 'agent':
+            interventions = interventions.filter(assigned_to=user)
+            incidents = incidents.filter(interventions__assigned_to=user).distinct()
+
+        data = {
+            'scope': role,
+            'incidents': incident_summary(incidents),
+            'interventions': intervention_summary(interventions),
+            'assets': asset_summary(),
+        }
+        if role in {'manager', 'admin'}:
+            data['users'] = {
+                'total': CustomUser.objects.count(),
+                'citizens': CustomUser.objects.filter(role='citizen').count(),
+                'agents': CustomUser.objects.filter(role='agent', is_active=True).count(),
+            }
+        return Response(data)
+
     @action(detail=False, methods=['post'])
     def generate_monthly_report(self, request):
-        """Générer un rapport mensuel"""
-        start_date = request.data.get('start_date')
-        end_date = request.data.get('end_date')
+        """Générer un rapport sur une période ; `save=true` l'enregistre."""
+        start_date = parse_date(str(request.data.get('start_date') or ''))
+        end_date = parse_date(str(request.data.get('end_date') or ''))
         
         if not start_date or not end_date:
             return Response({'error': 'start_date and end_date required'}, status=400)
-        
-        incidents_count = Incident.objects.filter(
-            created_at__date__gte=start_date,
-            created_at__date__lte=end_date
-        ).count()
-        
-        resolved_count = Incident.objects.filter(
+        if start_date > end_date:
+            return Response(
+                {'error': 'La date de début doit précéder la date de fin.'},
+                status=400,
+            )
+
+        incidents = Incident.objects.filter(
             created_at__date__gte=start_date,
             created_at__date__lte=end_date,
-            status=Incident.RESOLVED
-        ).count()
-        
+        )
+        incidents_count = incidents.count()
+        resolved_count = incidents.filter(status=Incident.RESOLVED).count()
+        interventions = Intervention.objects.filter(
+            scheduled_date__date__gte=start_date,
+            scheduled_date__date__lte=end_date,
+        )
+        summary = incident_summary(incidents, days=min((end_date - start_date).days + 1, 92))
+
         report_data = {
             'period': f"{start_date} to {end_date}",
             'total_incidents': incidents_count,
             'resolved_incidents': resolved_count,
             'resolution_rate': (resolved_count / incidents_count * 100) if incidents_count > 0 else 0,
+            'avg_resolution_hours': average_resolution_hours(incidents),
+            'rejected_incidents': incidents.filter(status=Incident.REJECTED).count(),
+            'by_category': summary['by_category'],
+            'by_priority': summary['by_priority'],
+            'interventions_planned': interventions.count(),
+            'interventions_completed': interventions.filter(
+                status=Intervention.COMPLETED,
+            ).count(),
+            'maintenance_cost': float(AssetHistory.objects.filter(
+                date__date__gte=start_date,
+                date__date__lte=end_date,
+            ).aggregate(total=Sum('cost'))['total'] or 0),
         }
+
+        if str(request.data.get('save', '')).lower() in {'1', 'true', 'yes'}:
+            if effective_role(request.user) not in {'manager', 'admin'}:
+                return Response(
+                    {'error': 'Seuls les gestionnaires peuvent enregistrer un rapport.'},
+                    status=403,
+                )
+            days = (end_date - start_date).days + 1
+            report_type = (
+                Report.MONTHLY if days <= 31 else
+                Report.QUARTERLY if days <= 92 else
+                Report.ANNUAL if days >= 365 else Report.CUSTOM
+            )
+            report = Report.objects.create(
+                title=request.data.get('title') or f'Rapport du {start_date:%d/%m/%Y} au {end_date:%d/%m/%Y}',
+                report_type=report_type,
+                generated_by=request.user,
+                start_date=start_date,
+                end_date=end_date,
+                content=report_data,
+            )
+            report_data['report_id'] = report.pk
         
         return Response(report_data)
+
+    @action(detail=False, methods=['post'])
+    def snapshot_kpi(self, request):
+        """Enregistre un instantané des KPI du jour (historisation)."""
+        incidents = Incident.objects.all()
+        summary = incident_summary(incidents)
+        cost = AssetHistory.objects.aggregate(avg=Avg('cost'))['avg'] or 0
+        metric = KPIMetrics.objects.create(
+            total_incidents=summary['total'],
+            resolved_incidents=summary['resolved'],
+            pending_incidents=summary['open'],
+            avg_resolution_time=summary['avg_resolution_hours'] or 0,
+            completed_interventions=Intervention.objects.filter(
+                status=Intervention.COMPLETED,
+            ).count(),
+            avg_intervention_cost=round(cost, 2),
+            asset_availability=asset_summary()['availability_rate'],
+        )
+        return Response(KPIMetricsSerializer(metric).data, status=201)

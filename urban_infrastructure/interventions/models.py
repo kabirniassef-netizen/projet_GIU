@@ -22,6 +22,8 @@ class Intervention(models.Model):
         (CANCELLED, 'Annulée'),
     ]
 
+    ACTIVE_STATUSES = (PENDING, ASSIGNED, IN_PROGRESS)
+
     ALLOWED_STATUS_TRANSITIONS = {
         PENDING: {ASSIGNED, IN_PROGRESS, CANCELLED},
         ASSIGNED: {IN_PROGRESS, CANCELLED},
@@ -42,7 +44,8 @@ class Intervention(models.Model):
         (URGENT, 'Urgente'),
     ]
     
-    incident = models.OneToOneField(Incident, on_delete=models.CASCADE, related_name='intervention')
+    # Un incident peut être replanifié après l'annulation d'une intervention.
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name='interventions')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='interventions_assigned')
     
     # Planning

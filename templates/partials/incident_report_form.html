@@ -1,0 +1,56 @@
+{# Formulaire public de signalement, partagé par /signaler/ et la fenêtre de l’accueil. #}
+<form id="publicIncidentForm" enctype="multipart/form-data" novalidate>
+  <div class="row g-3">
+    <div class="col-md-7">
+      <label class="form-label" for="incidentTitle">Titre</label>
+      <input class="form-control" id="incidentTitle" name="title" maxlength="200" placeholder="Ex. Accident à l’intersection" required>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="incidentCategory">Type d’incident</label>
+      <select class="form-select" id="incidentCategory" name="category" required>
+        <option value="">Chargement des catégories…</option>
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="incidentDescription">Que s’est-il passé ?</label>
+      <textarea class="form-control" id="incidentDescription" name="description" rows="3" placeholder="Décrivez les faits observés et le danger éventuel." required></textarea>
+    </div>
+    <fieldset class="col-12">
+      <legend class="h6 fw-semibold">Adresse</legend>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="incidentRegion">Région</label>
+          <select class="form-select" id="incidentRegion" name="region" required></select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="incidentDepartment">Département</label>
+          <select class="form-select" id="incidentDepartment" name="department" required></select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="incidentCommune">Commune</label>
+          <select class="form-select" id="incidentCommune" name="commune" required></select>
+        </div>
+      </div>
+    </fieldset>
+    <div class="col-12">
+      <label class="form-label" for="incidentPhoto">Photo (facultative, 5 Mio maximum)</label>
+      <input class="form-control" id="incidentPhoto" name="photo" type="file" accept="image/*" capture="environment">
+      <div class="photo-preview" id="photoPreview" hidden></div>
+    </div>
+    <div class="col-12">
+      <div id="publicIncidentMessage" class="small mb-2" role="status" aria-live="polite"></div>
+      <button class="btn btn-primary btn-lg w-100" type="submit" disabled><i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Envoyer le signalement</button>
+    </div>
+  </div>
+</form>
+<div class="success-panel" id="publicIncidentSuccess" hidden>
+  <div class="success-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></div>
+  <h2 class="h4 fw-bold">Merci, votre signalement est enregistré</h2>
+  <p class="text-secondary">Conservez ce code : il vous permet de suivre son traitement par les services municipaux.</p>
+  <div class="tracking-code" id="trackingCode"></div>
+  <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+    <button class="btn btn-light" type="button" id="copyTrackingCode"><i class="fa-regular fa-copy me-2" aria-hidden="true"></i>Copier le code</button>
+    <a class="btn btn-primary" id="trackLink" href="/suivi/"><i class="fa-solid fa-magnifying-glass-location me-2" aria-hidden="true"></i>Suivre mon signalement</a>
+    <button class="btn btn-light" type="button" id="newReportButton">Faire un autre signalement</button>
+  </div>
+</div>

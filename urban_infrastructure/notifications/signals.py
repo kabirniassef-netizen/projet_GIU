@@ -1,6 +1,7 @@
 import mimetypes
 import logging
 import email.policy
+from smtplib import SMTPException
 from email.message import EmailMessage as MIMEEmailMessage
 from html import escape
 
@@ -141,7 +142,14 @@ def _create_notifications(users, event_type, message, related_object):
             )
         email_messages.append(email)
     for email in email_messages:
-        email.send(fail_silently=False)
+        try:
+            email.send(fail_silently=False)
+        except (OSError, SMTPException):
+            logger.exception(
+                'Failed to send %s notification email to %s',
+                event_type,
+                ', '.join(email.to),
+            )
 
 
 @receiver(pre_save, sender=Incident)
