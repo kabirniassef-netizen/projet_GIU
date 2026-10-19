@@ -164,8 +164,9 @@ def remember_incident_status(sender, instance, **kwargs):
 @receiver(post_save, sender=Incident)
 def notify_incident_events(sender, instance, created, **kwargs):
     if created:
+        # Chaque nouveau signalement est annoncé à tous les utilisateurs actifs.
         _create_notifications(
-            _management_users(),
+            User.objects.filter(is_active=True),
             'incident_created',
             f'Nouveau signalement : {instance.title}',
             instance,

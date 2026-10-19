@@ -50,15 +50,20 @@ class NotificationTests(TestCase):
             reporter=self.citizen,
         )
 
-    def test_new_incident_notifies_managers(self):
+    def test_new_incident_notifies_all_active_users(self):
+        inactive_user = get_user_model().objects.create_user(
+            username='notification-inactive-app', password='test', is_active=False,
+        )
+
         incident = self.create_incident()
 
-        self.assertTrue(Notification.objects.filter(
-            recipient=self.manager,
-            event_type='incident_created',
-            object_id=incident.pk,
-        ).exists())
-        self.assertFalse(Notification.objects.filter(recipient=self.agent).exists())
+        for user in (self.citizen, self.manager, self.other_citizen, self.agent):
+            self.assertTrue(Notification.objects.filter(
+                recipient=user,
+                event_type='incident_created',
+                object_id=incident.pk,
+            ).exists())
+        self.assertFalse(Notification.objects.filter(recipient=inactive_user).exists())
 
     @override_settings(
         EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
@@ -124,7 +129,7 @@ class NotificationTests(TestCase):
             event_type='incident_created',
             object_id=incident.pk,
         ).exists())
-        self.assertFalse(Notification.objects.filter(
+        self.assertTrue(Notification.objects.filter(
             recipient=decision_maker,
             event_type='incident_created',
             object_id=incident.pk,
