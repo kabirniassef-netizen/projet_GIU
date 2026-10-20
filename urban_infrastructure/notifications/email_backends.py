@@ -2,6 +2,7 @@ import base64
 import json
 import re
 from email.utils import parseaddr
+from urllib import error as urllib_error
 from urllib import request as urllib_request
 
 from django.conf import settings
@@ -86,5 +87,10 @@ class BrevoEmailBackend(BaseEmailBackend):
             },
             method='POST',
         )
-        with urllib_request.urlopen(api_request, timeout=10) as response:
-            response.read()
+        try:
+            with urllib_request.urlopen(api_request, timeout=10) as response:
+                response.read()
+        except urllib_error.HTTPError as error:
+            # La réponse de Brevo explique le refus (clé invalide, expéditeur non validé…).
+            detail = error.read().decode('utf-8', errors='replace')
+            raise OSError(f'Brevo API error {error.code}: {detail}') from error
