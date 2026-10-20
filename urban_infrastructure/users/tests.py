@@ -2,13 +2,14 @@ import os
 import subprocess
 import sys
 from datetime import timedelta
-from io import BytesIO
+from io import BytesIO, StringIO
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
@@ -596,3 +597,14 @@ class ProjectBusinessFlowTests(TestCase):
 
         report = self.client.get('/api/reports/reports/')
         self.assertEqual(report.status_code, 200)
+
+
+class EnsureAdminCommandTests(TestCase):
+    @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.PBKDF2PasswordHasher'])
+    def test_creates_admin_only_when_none_exists(self):
+        call_command('ensure_admin', stdout=StringIO())
+        call_command('ensure_admin', stdout=StringIO())
+
+        admins = get_user_model().objects.filter(is_superuser=True)
+        self.assertEqual(list(admins.values_list('username', flat=True)), ['admin'])
+        self.assertTrue(admins.get().check_password('admin123'))
