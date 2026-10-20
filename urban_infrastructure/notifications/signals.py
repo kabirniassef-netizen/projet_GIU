@@ -143,11 +143,12 @@ def _create_notifications(users, event_type, message, related_object):
     for email in email_messages:
         try:
             email.send(fail_silently=False)
-        except (OSError, SMTPException):
+        except (OSError, SMTPException) as error:
             logger.exception(
-                'Failed to send %s notification email to %s',
+                'Failed to send %s notification email to %s: %s',
                 event_type,
                 ', '.join(email.to),
+                error,
             )
 
 
