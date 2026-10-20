@@ -1,9 +1,11 @@
 from datetime import timedelta
 import hashlib
 import hmac
+import io
 import json
 import tempfile
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError
 
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -21,6 +23,7 @@ from urban_infrastructure.incidents.notifications import (
 from urban_infrastructure.incidents.models import Incident, IncidentCategory
 from urban_infrastructure.interventions.models import Intervention
 
+from .email_backends import BREVO_API_URL, BrevoEmailBackend
 from .models import Notification, WhatsAppContact, WhatsAppMessage, WhatsAppTemplate
 
 
@@ -410,6 +413,42 @@ class NotificationTests(TestCase):
         )
         self.assertEqual(payload['to'], [{'email': 'citizen@example.com'}])
         self.assertIn(incident.title, payload['textContent'])
+
+    def _brevo_photo_message(self, photo_name):
+        message = mail.EmailMessage(
+            'Sujet', 'Corps', 'notifications@example.com', ['citizen@example.com'],
+        )
+        message.photo_name = photo_name
+        message.photo_content = b'fake-jpeg-content'
+        return message
+
+    @override_settings(BREVO_API_KEY='brevo-test-key')
+    def test_brevo_backend_renames_jfif_photo_to_jpg(self):
+        with patch(
+            'urban_infrastructure.notifications.email_backends.urllib_request.urlopen',
+        ) as urlopen:
+            sent = BrevoEmailBackend().send_messages([self._brevo_photo_message('photo.jfif')])
+
+        self.assertEqual(sent, 1)
+        payload = json.loads(urlopen.call_args.args[0].data.decode('utf-8'))
+        self.assertEqual(payload['attachment'][0]['name'], 'photo.jpg')
+
+    @override_settings(BREVO_API_KEY='brevo-test-key')
+    def test_brevo_backend_resends_without_attachment_when_rejected(self):
+        rejection = HTTPError(
+            BREVO_API_URL, 400, 'Bad Request', {},
+            io.BytesIO(b'{"code":"invalid_parameter","message":"Unsupported file format"}'),
+        )
+        with patch(
+            'urban_infrastructure.notifications.email_backends.urllib_request.urlopen',
+            side_effect=[rejection, MagicMock()],
+        ) as urlopen:
+            sent = BrevoEmailBackend().send_messages([self._brevo_photo_message('photo.heic')])
+
+        self.assertEqual(sent, 1)
+        self.assertEqual(urlopen.call_count, 2)
+        retry_payload = json.loads(urlopen.call_args.args[0].data.decode('utf-8'))
+        self.assertNotIn('attachment', retry_payload)
 
     @override_settings(
         EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
