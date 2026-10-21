@@ -92,6 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
       form.reset();
       form.classList.remove('was-validated');
       photoPreview.hidden = true;
+      photoPreview.replaceChildren();
+      copyLabel.textContent = 'Copier le code';
       message.textContent = '';
       document.getElementById('trackingCode').textContent = incident.tracking_code;
       document.getElementById('trackLink').href = `/suivi/?code=${encodeURIComponent(incident.tracking_code)}`;
@@ -112,17 +114,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('copyTrackingCode').addEventListener('click', async event => {
+  const copyButton = document.getElementById('copyTrackingCode');
+  const copyLabel = copyButton.querySelector('span');
+  copyButton.addEventListener('click', async () => {
     const code = document.getElementById('trackingCode').textContent;
     try {
       await navigator.clipboard.writeText(code);
-      event.currentTarget.textContent = 'Code copié ✓';
+      copyLabel.textContent = 'Code copié ✓';
     } catch (error) {
-      event.currentTarget.textContent = code;
+      // Presse-papiers indisponible (HTTP, ancien navigateur) : on sélectionne le code pour une copie manuelle.
+      window.getSelection().selectAllChildren(document.getElementById('trackingCode'));
+      copyLabel.textContent = 'Code sélectionné, copiez-le';
     }
   });
 
   document.getElementById('newReportButton').addEventListener('click', () => {
+    copyLabel.textContent = 'Copier le code';
     successPanel.hidden = true;
     form.hidden = false;
     document.getElementById('incidentTitle').focus();

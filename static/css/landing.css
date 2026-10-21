@@ -38,3 +38,12 @@ body { color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,-apple-system
 /* Les décors du haut de page ne doivent pas intercepter les clics sur les boutons et la carte. */
 .hero-section:after, .hero-orb { pointer-events:none; }
 .hero-section > .container { z-index:1; }
+
+/* Accueil citoyen : les trois étapes tiennent dans le premier écran, à côté des boutons. */
+.hero-steps { position:relative; z-index:1; padding:1.6rem; border:1px solid rgba(255,255,255,.2); border-radius:1rem; background:rgba(255,255,255,.08); backdrop-filter:blur(8px); }
+.hero-steps h2 { color:#9dd2ff; letter-spacing:.06em; }
+.hero-steps li { display:flex; gap:1rem; align-items:flex-start; }
+.hero-steps li + li { margin-top:1.1rem; padding-top:1.1rem; border-top:1px solid rgba(255,255,255,.12); }
+.hero-steps .feature-icon { flex-shrink:0; }
+.hero-steps strong { display:block; color:#fff; }
+.hero-steps small { display:block; color:#c9e3f5; font-size:.9rem; line-height:1.45; }
