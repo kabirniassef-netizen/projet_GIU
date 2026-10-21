@@ -66,6 +66,54 @@ document.addEventListener('DOMContentLoaded', () => {
     photoPreview.append(image, name);
   });
 
+  const addressInput = document.getElementById('incidentAddress');
+  const locateButton = document.getElementById('locateButton');
+  const locateMessage = document.getElementById('locateMessage');
+
+  // Adresse lisible via OpenStreetMap ; en cas d'échec on garde seulement les coordonnées GPS.
+  async function reverseGeocode(latitude, longitude) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=fr&lat=${latitude}&lon=${longitude}`;
+      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!response.ok) return '';
+      const place = await response.json();
+      const parts = place.address || {};
+      return [parts.road, parts.neighbourhood || parts.suburb || parts.quarter, parts.city || parts.town || parts.village]
+        .filter(Boolean)
+        .filter((value, index, list) => list.indexOf(value) === index)
+        .join(', ');
+    } catch (error) {
+      return '';
+    }
+  }
+
+  locateButton.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      locateMessage.className = 'form-text text-danger';
+      locateMessage.textContent = 'La localisation n’est pas disponible sur cet appareil.';
+      return;
+    }
+    locateButton.disabled = true;
+    locateMessage.className = 'form-text';
+    locateMessage.textContent = 'Recherche de votre position…';
+    navigator.geolocation.getCurrentPosition(async position => {
+      const latitude = position.coords.latitude.toFixed(5);
+      const longitude = position.coords.longitude.toFixed(5);
+      const place = await reverseGeocode(latitude, longitude);
+      const gps = `GPS ${latitude}, ${longitude}`;
+      addressInput.value = (place ? `${place} — ${gps}` : gps).slice(0, 300);
+      locateMessage.className = 'form-text text-success';
+      locateMessage.textContent = `Position ajoutée (précision ≈ ${Math.round(position.coords.accuracy)} m). Vous pouvez compléter avec un repère.`;
+      locateButton.disabled = false;
+    }, error => {
+      locateMessage.className = 'form-text text-danger';
+      locateMessage.textContent = error.code === error.PERMISSION_DENIED
+        ? 'Accès à la position refusé. Autorisez-le dans votre navigateur ou saisissez le lieu.'
+        : 'Position introuvable. Activez le GPS ou saisissez le lieu à la main.';
+      locateButton.disabled = false;
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+  });
+
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!form.checkValidity()) {
@@ -94,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       photoPreview.hidden = true;
       photoPreview.replaceChildren();
       copyLabel.textContent = 'Copier le code';
+      locateMessage.textContent = '';
       message.textContent = '';
       document.getElementById('trackingCode').textContent = incident.tracking_code;
       document.getElementById('trackLink').href = `/suivi/?code=${encodeURIComponent(incident.tracking_code)}`;

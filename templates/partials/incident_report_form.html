@@ -32,7 +32,11 @@
         </div>
         <div class="col-12">
           <label class="form-label" for="incidentAddress">Lieu précis <span class="text-secondary fw-normal">(facultatif)</span></label>
-          <input class="form-control" id="incidentAddress" name="address" maxlength="300" placeholder="Ex. Rue 10 x Avenue Bourguiba, près de la pharmacie" autocomplete="street-address">
+          <div class="input-group">
+            <input class="form-control" id="incidentAddress" name="address" maxlength="300" placeholder="Ex. Rue 10 x Avenue Bourguiba, près de la pharmacie" autocomplete="street-address">
+            <button class="btn btn-outline-primary" type="button" id="locateButton"><i class="fa-solid fa-location-crosshairs me-1" aria-hidden="true"></i><span>Ma position</span></button>
+          </div>
+          <div class="form-text" id="locateMessage" role="status" aria-live="polite"></div>
         </div>
       </div>
     </fieldset>
