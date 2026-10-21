@@ -327,6 +327,23 @@ class ProjectBusinessFlowTests(TestCase):
         })
         self.assertEqual(invalid_response.status_code, 400)
 
+    def test_public_report_works_while_a_session_is_open_in_the_browser(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.manager)
+        category = IncidentCategory.objects.get(name=IncidentCategory.ACCIDENT)
+
+        response = client.post('/api/incidents/public/', {
+            'title': 'Accident au rond-point',
+            'description': 'Signalé depuis un navigateur connecté au tableau de bord.',
+            'category': category.id,
+            'region': 'Dakar',
+            'department': 'Dakar',
+            'commune': 'Dakar',
+        })
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertIsNone(Incident.objects.get(pk=response.json()['id']).reporter)
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend')
     def test_anonymous_citizen_can_report_with_photo_when_email_delivery_fails(self):
         image_bytes = BytesIO()

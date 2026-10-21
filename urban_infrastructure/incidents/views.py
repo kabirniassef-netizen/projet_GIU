@@ -69,6 +69,9 @@ class IncidentCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PublicIncidentCreateView(APIView):
     """Permet aux citoyens de signaler un incident sans créer de compte."""
+    # Formulaire anonyme : une session ouverte dans le navigateur ne doit pas
+    # imposer le jeton CSRF que la page publique n'envoie pas.
+    authentication_classes = []
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
 
