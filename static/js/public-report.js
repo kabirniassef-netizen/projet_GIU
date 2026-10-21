@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     locateButton.disabled = true;
     locateMessage.className = 'form-text';
     locateMessage.textContent = 'Recherche de votre position…';
-    navigator.geolocation.getCurrentPosition(async position => {
+    const showPosition = async position => {
       const latitude = position.coords.latitude.toFixed(5);
       const longitude = position.coords.longitude.toFixed(5);
       const place = await reverseGeocode(latitude, longitude);
@@ -105,13 +105,24 @@ document.addEventListener('DOMContentLoaded', () => {
       locateMessage.className = 'form-text text-success';
       locateMessage.textContent = `Position ajoutée (précision ≈ ${Math.round(position.coords.accuracy)} m). Vous pouvez compléter avec un repère.`;
       locateButton.disabled = false;
-    }, error => {
+    };
+    const showError = error => {
       locateMessage.className = 'form-text text-danger';
-      locateMessage.textContent = error.code === error.PERMISSION_DENIED
-        ? 'Accès à la position refusé. Autorisez-le dans votre navigateur ou saisissez le lieu.'
-        : 'Position introuvable. Activez le GPS ou saisissez le lieu à la main.';
+      if (error.code === error.PERMISSION_DENIED) {
+        locateMessage.textContent = 'Accès à la position refusé : cliquez sur le cadenas à gauche de l’adresse du site et autorisez « Position », ou saisissez le lieu.';
+      } else if (error.code === error.TIMEOUT) {
+        locateMessage.textContent = 'La position met trop de temps à arriver. Réessayez à l’extérieur ou saisissez le lieu à la main.';
+      } else {
+        locateMessage.textContent = 'Position indisponible : activez la localisation de l’appareil (sur Windows : Paramètres › Confidentialité › Localisation) ou saisissez le lieu.';
+      }
       locateButton.disabled = false;
-    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    };
+    // D'abord le GPS (téléphone), puis la localisation Wi-Fi/réseau, plus fiable sur ordinateur.
+    navigator.geolocation.getCurrentPosition(showPosition, error => {
+      if (error.code === error.PERMISSION_DENIED) return showError(error);
+      locateMessage.textContent = 'GPS indisponible, localisation par le réseau…';
+      navigator.geolocation.getCurrentPosition(showPosition, showError, { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 });
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
   });
 
   form.addEventListener('submit', async event => {
