@@ -86,17 +86,6 @@ doit avoir accès à Internet. Le projet envoie les e-mails aux adresses des
 comptes actifs; plusieurs comptes utilisant la même adresse reçoivent un seul
 exemplaire par événement.
 
-### Notifications WhatsApp (optionnelles)
-
-Pour activer les notifications via WhatsApp Cloud API, configurez les secrets
-`WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN` et
-`WHATSAPP_TEMPLATE_NAME` dans l'environnement de déploiement. Le modèle doit
-être approuvé par Meta et les contacts destinataires doivent avoir donné leur
-consentement. Pour recevoir les événements de webhook, publiez
-`/webhooks/whatsapp/` derrière HTTPS et configurez
-`WHATSAPP_WEBHOOK_VERIFY_TOKEN` et `WHATSAPP_APP_SECRET`. Ne mettez aucune de
-ces valeurs secrètes dans Git.
-
 ## 📚 Architecture
 
 ### Mise en ligne sur Render
@@ -120,7 +109,7 @@ déploiement.
    `python manage.py createsuperuser` dans le Shell du service Render.
 4. Testez l'inscription citoyen et l'envoi d'un signalement depuis un téléphone.
 5. Configurez SMTP séparément si les courriels doivent être remis aux
-   destinataires. Les notifications WhatsApp restent optionnelles.
+   destinataires.
 
 Le Blueprint ne charge pas de comptes ou de données de démonstration. Le
 déploiement automatique est désactivé; publiez explicitement les changements
