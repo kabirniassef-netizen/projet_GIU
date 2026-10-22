@@ -32,7 +32,7 @@ pip install -r requirements.txt
 python manage.py migrate
 
 # 6. Charger les données de démonstration (développement uniquement)
-python load_test_data.py
+python scripts/load_test_data.py
 
 # 7. Lancer le serveur de développement
 python manage.py runserver
@@ -141,13 +141,14 @@ projet_GIU/
 │   ├── assets/                      # Patrimoine urbain
 │   ├── interventions/               # Interventions techniques
 │   ├── reports/                     # Rapports et KPI
-│   └── notifications/               # Notifications et webhooks
+│   └── notifications/               # Notifications in-app et e-mail
 ├── templates/                       # Templates HTML
 ├── static/                          # Fichiers statiques (CSS, JS)
-│   ├── css/style.css               # Styles
-│   └── js/api.js                   # Client API
+│   ├── css/                         # Styles par page
+│   └── js/                          # Client API et écrans
+├── docs/                            # Diagrammes et explications
+├── scripts/load_test_data.py        # Données de démonstration (DEBUG uniquement)
 ├── manage.py                        # CLI Django
-├── load_test_data.py               # Script de données de test
 └── requirements.txt                 # Dépendances Python
 ```
 
@@ -299,7 +300,7 @@ curl -H "Authorization: Token votre_token" http://localhost:8000/api/incidents/i
 
 ## 📋 Comptes de Test
 
-Sur une base de développement neuve, `load_test_data.py` crée les comptes de
+Sur une base de développement neuve, `scripts/load_test_data.py` crée les comptes de
 démonstration ci-dessous. Il ne modifie pas les mots de passe des comptes
 existants; l'admin nouvellement créé doit changer son mot de passe.
 
@@ -327,7 +328,7 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Charger les données de test
-python load_test_data.py
+python scripts/load_test_data.py
 
 # Lancer le shell Django
 python manage.py shell
