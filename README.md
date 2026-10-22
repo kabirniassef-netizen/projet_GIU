@@ -286,15 +286,9 @@ Tableau de bord avec indicateurs de performance clés.
 ### Obtenir un Token
 
 ```bash
-# Méthode 1: Via l'interface Django
-# Aller sur /admin/ et créer un utilisateur
-
-# Méthode 2: Via l'API (à implémenter)
-# POST /api/token/
-# {
-#   "username": "user",
-#   "password": "password"
-# }
+# POST /api/auth/login/  (identifiant ou adresse e-mail)
+curl -X POST http://localhost:8000/api/auth/login/   -H "Content-Type: application/json"   -d '{"username": "user", "password": "password"}'
+# Réponse : {"token": "...", "user": {...}}
 ```
 
 ### Utiliser le Token
@@ -402,7 +396,6 @@ et avertissements doivent être traités avant la mise en ligne.
 
 ## 📚 Documentation
 
-- [Guide du projet](docs/README.md)
 - [Explication des diagrammes](docs/explication-diagrammes.md)
 - [Document Word original](docs/explication-diagrammes.docx)
 
