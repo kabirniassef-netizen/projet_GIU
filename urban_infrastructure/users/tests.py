@@ -15,7 +15,7 @@ from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 from PIL import Image
 
-from load_test_data import populate_test_data
+from scripts.load_test_data import populate_test_data
 from urban_infrastructure.incidents.models import Incident, IncidentCategory
 from urban_infrastructure.interventions.models import Intervention, InterventionUpdate
 from urban_infrastructure.assets.models import AssetType

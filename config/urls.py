@@ -16,7 +16,6 @@ from .views import (
     PublicIncidentTrackingPageView,
 )
 from urban_infrastructure.users.views import login_view, logout_view
-from urban_infrastructure.notifications.webhooks import whatsapp_webhook
 
 urlpatterns = [
     path('', HomePageView.as_view(), name='home'),
@@ -32,7 +31,6 @@ urlpatterns = [
     path('api/auth/login/', login_view, name='api_login'),
     path('api/auth/logout/', logout_view, name='api_logout'),
     path('api/auth/', include('rest_framework.urls')),
-    path('webhooks/whatsapp/', whatsapp_webhook, name='whatsapp_webhook'),
     
     # API endpoints
     path('api/users/', include('urban_infrastructure.users.urls')),

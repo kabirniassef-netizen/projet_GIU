@@ -32,7 +32,7 @@ pip install -r requirements.txt
 python manage.py migrate
 
 # 6. Charger les données de démonstration (développement uniquement)
-python load_test_data.py
+python scripts/load_test_data.py
 
 # 7. Lancer le serveur de développement
 python manage.py runserver
@@ -86,17 +86,6 @@ doit avoir accès à Internet. Le projet envoie les e-mails aux adresses des
 comptes actifs; plusieurs comptes utilisant la même adresse reçoivent un seul
 exemplaire par événement.
 
-### Notifications WhatsApp (optionnelles)
-
-Pour activer les notifications via WhatsApp Cloud API, configurez les secrets
-`WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN` et
-`WHATSAPP_TEMPLATE_NAME` dans l'environnement de déploiement. Le modèle doit
-être approuvé par Meta et les contacts destinataires doivent avoir donné leur
-consentement. Pour recevoir les événements de webhook, publiez
-`/webhooks/whatsapp/` derrière HTTPS et configurez
-`WHATSAPP_WEBHOOK_VERIFY_TOKEN` et `WHATSAPP_APP_SECRET`. Ne mettez aucune de
-ces valeurs secrètes dans Git.
-
 ## 📚 Architecture
 
 ### Mise en ligne sur Render
@@ -120,7 +109,7 @@ déploiement.
    `python manage.py createsuperuser` dans le Shell du service Render.
 4. Testez l'inscription citoyen et l'envoi d'un signalement depuis un téléphone.
 5. Configurez SMTP séparément si les courriels doivent être remis aux
-   destinataires. Les notifications WhatsApp restent optionnelles.
+   destinataires.
 
 Le Blueprint ne charge pas de comptes ou de données de démonstration. Le
 déploiement automatique est désactivé; publiez explicitement les changements
@@ -152,13 +141,14 @@ projet_GIU/
 │   ├── assets/                      # Patrimoine urbain
 │   ├── interventions/               # Interventions techniques
 │   ├── reports/                     # Rapports et KPI
-│   └── notifications/               # Notifications et webhooks
+│   └── notifications/               # Notifications in-app et e-mail
 ├── templates/                       # Templates HTML
 ├── static/                          # Fichiers statiques (CSS, JS)
-│   ├── css/style.css               # Styles
-│   └── js/api.js                   # Client API
+│   ├── css/                         # Styles par page
+│   └── js/                          # Client API et écrans
+├── docs/                            # Diagrammes et explications
+├── scripts/load_test_data.py        # Données de démonstration (DEBUG uniquement)
 ├── manage.py                        # CLI Django
-├── load_test_data.py               # Script de données de test
 └── requirements.txt                 # Dépendances Python
 ```
 
@@ -297,15 +287,9 @@ Tableau de bord avec indicateurs de performance clés.
 ### Obtenir un Token
 
 ```bash
-# Méthode 1: Via l'interface Django
-# Aller sur /admin/ et créer un utilisateur
-
-# Méthode 2: Via l'API (à implémenter)
-# POST /api/token/
-# {
-#   "username": "user",
-#   "password": "password"
-# }
+# POST /api/auth/login/  (identifiant ou adresse e-mail)
+curl -X POST http://localhost:8000/api/auth/login/   -H "Content-Type: application/json"   -d '{"username": "user", "password": "password"}'
+# Réponse : {"token": "...", "user": {...}}
 ```
 
 ### Utiliser le Token
@@ -316,7 +300,7 @@ curl -H "Authorization: Token votre_token" http://localhost:8000/api/incidents/i
 
 ## 📋 Comptes de Test
 
-Sur une base de développement neuve, `load_test_data.py` crée les comptes de
+Sur une base de développement neuve, `scripts/load_test_data.py` crée les comptes de
 démonstration ci-dessous. Il ne modifie pas les mots de passe des comptes
 existants; l'admin nouvellement créé doit changer son mot de passe.
 
@@ -344,7 +328,7 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Charger les données de test
-python load_test_data.py
+python scripts/load_test_data.py
 
 # Lancer le shell Django
 python manage.py shell
@@ -413,7 +397,6 @@ et avertissements doivent être traités avant la mise en ligne.
 
 ## 📚 Documentation
 
-- [Guide du projet](docs/README.md)
 - [Explication des diagrammes](docs/explication-diagrammes.md)
 - [Document Word original](docs/explication-diagrammes.docx)
 
