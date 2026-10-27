@@ -1,0 +1,13 @@
+{% if typebot_config %}
+  {{ typebot_config|json_script:"typebot-config" }}
+  <script type="module">
+    import Typebot from 'https://cdn.jsdelivr.net/npm/@typebot.io/js@0/dist/web.js';
+    const config = JSON.parse(document.getElementById('typebot-config').textContent);
+    Typebot.initBubble({
+      typebot: config.typebot,
+      apiHost: config.apiHost,
+      previewMessage: { message: 'Besoin d’aide pour signaler ou suivre un incident ?', autoShowDelay: 5000 },
+      theme: { button: { backgroundColor: '#2563eb' } },
+    });
+  </script>
+{% endif %}
