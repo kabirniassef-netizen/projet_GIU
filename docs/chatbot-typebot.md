@@ -101,6 +101,41 @@ La photo n'est pas gérée par le bot : renvoyer vers `/signaler/` si le citoyen
 3. Condition : `reponse` vide → « Code introuvable, vérifiez-le. » Sinon →
    « Votre signalement est actuellement : **{{reponse}}**. Détails : /suivi/?code={{code}} ».
 
+### Apparence (onglet *Theme* de l'éditeur)
+
+La fenêtre de discussion est dessinée par Typebot dans une zone isolée (shadow DOM) :
+le CSS du site ne l'atteint pas, elle se règle ici. Valeurs alignées sur l'accueil
+(`static/css/landing.css`) ; le bleu des bulles est le bleu foncé `#0863c7`, car le
+blanc sur `#1677e8` n'atteint pas le contraste WCAG AA (4,35:1 au lieu de 4,5:1).
+
+| Réglage | Valeur |
+|---|---|
+| Global → Font | `Inter` |
+| Global → Background | Color, `#FFFFFF` |
+| Chat → Host bubbles | fond `#F1F6FB`, texte `#082F49` |
+| Chat → Guest bubbles | fond `#0863C7`, texte `#FFFFFF` |
+| Chat → Buttons | fond `#0863C7`, texte `#FFFFFF` |
+| Chat → Inputs | fond `#FFFFFF`, texte `#082F49`, placeholder `#60758A` |
+| Arrondis | 14 px pour les bulles, 10 px pour les boutons et champs |
+
+Puis *Custom CSS* (apparition des messages, retour visuel des boutons) :
+
+```css
+.typebot-host-bubble, .typebot-guest-bubble { animation: giu-message-in .3s cubic-bezier(.2, .8, .2, 1) both; }
+.typebot-button { transition: transform .15s, filter .15s; }
+.typebot-button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.typebot-button:focus-visible { outline: 2px solid #1677e8; outline-offset: 2px; }
+@keyframes giu-message-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) {
+  .typebot-host-bubble, .typebot-guest-bubble, .typebot-button { animation: none; transition: none; }
+}
+```
+
+Le bouton flottant, lui, est celui du site (`templates/partials/typebot_bubble.html`,
+`static/css/chatbot.css`, `static/js/chatbot.js`) : le script Typebot (~700 Ko, version
+fixée dans `chatbot.js`) n'est téléchargé que lorsque le visiteur approche ou touche ce
+bouton.
+
 ## 4. Publier
 
 Cliquer sur **Publish**, puis *Share* → copier l'identifiant public dans `TYPEBOT_ID`.
