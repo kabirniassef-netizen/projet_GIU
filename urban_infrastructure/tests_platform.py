@@ -367,3 +367,5 @@ class PageTests(TestCase):
             response = self.client.get(url)
             self.assertContains(response, '"typebot": "giu-signalements"')
             self.assertContains(response, '"apiHost": "https://bot.example.org"')
+            self.assertContains(response, 'class="giu-chatbot-launcher" aria-expanded="false"')
+            self.assertContains(response, 'js/chatbot.js')
