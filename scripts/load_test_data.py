@@ -40,7 +40,7 @@ def populate_test_data():
 
     print('Création des catégories d\'incidents...')
     categories = [
-        ('lighting', 'Éclairage Public'),
+        ('lighting', 'Lampadaire / Éclairage public'),
         ('road', 'Voirie'),
         ('waste', 'Déchets'),
         ('signal', 'Signalisation'),
@@ -48,6 +48,8 @@ def populate_test_data():
         ('vitesse', 'Vitesse'),
         ('panne', 'Panne'),
         ('mauvaise_visibilite', 'Mauvaise visibilité'),
+        ('inondation', 'Inondation'),
+        ('environnement', 'Environnement'),
     ]
     for code, label in categories:
         IncidentCategory.objects.get_or_create(

@@ -228,6 +228,9 @@ class ProjectBusinessFlowTests(TestCase):
             'Panne',
             'Mauvaise visibilité',
             'Accident de la route',
+            'Inondation',
+            'Environnement',
+            'Lampadaire / Éclairage public',
         }.issubset(labels))
 
     def test_citizen_can_report_a_road_accident_with_a_precise_location(self):
