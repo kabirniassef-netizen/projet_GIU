@@ -95,6 +95,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
   <script src="{% static 'js/api.js' %}"></script>
   <script src="{% static 'js/senegal-geo.js' %}"></script>
+  <script src="{% static 'js/photo-resize.js' %}"></script>
   <script src="{% static 'js/public-report.js' %}"></script>
   {% if not citizen_only %}
   <script>document.addEventListener('DOMContentLoaded', async () => { try { const stats = await apiClient.getGlobalStatistics(); const pending = stats.total_interventions - stats.completed_interventions; document.getElementById('total-incidents').textContent = stats.total_incidents; document.getElementById('total-incidents-mobile').textContent = stats.total_incidents; document.getElementById('resolved-incidents').textContent = stats.resolved_incidents; document.getElementById('pending-interventions').textContent = pending; document.getElementById('pending-interventions-mobile').textContent = pending; document.getElementById('asset-availability').textContent = stats.asset_availability_rate.toFixed(1); } catch (error) { console.log('Impossible de charger les statistiques (authentification requise)'); } });</script>
