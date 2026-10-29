@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const photoInput = document.getElementById('incidentPhoto');
   const photoPreview = document.getElementById('photoPreview');
   const successPanel = document.getElementById('publicIncidentSuccess');
-  const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+  let photo = null;
 
   function showMessage(text, isError = false) {
     message.className = `small mb-2 ${isError ? 'text-danger' : 'text-success'}`;
@@ -44,11 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  photoInput.addEventListener('change', () => {
-    const file = photoInput.files[0];
+  photoInput.addEventListener('change', async () => {
+    photo = null;
     photoPreview.replaceChildren();
-    photoPreview.hidden = !file;
-    if (!file) return;
+    photoPreview.hidden = !photoInput.files[0];
+    if (!photoInput.files[0]) return;
+    photoPreview.textContent = 'Préparation de la photo…';
+    const file = await preparePhoto(photoInput.files[0]);
+    photoPreview.replaceChildren();
     if (file.size > MAX_PHOTO_SIZE) {
       const warning = document.createElement('span');
       warning.className = 'small text-danger';
@@ -56,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       photoPreview.appendChild(warning);
       return;
     }
+    photo = file;
     const image = document.createElement('img');
     image.alt = 'Aperçu de la photo';
     image.src = URL.createObjectURL(file);
@@ -132,14 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
       showMessage('Complétez les champs obligatoires.', true);
       return;
     }
-    const photo = photoInput.files[0];
-    if (photo && photo.size > MAX_PHOTO_SIZE) {
+    if (photoInput.files[0] && !photo) {
       showMessage('La photo ne doit pas dépasser 5 Mio.', true);
       return;
     }
 
     const payload = new FormData(form);
-    if (!photo) payload.delete('photo');
+    if (photo) payload.set('photo', photo, photo.name);
+    else payload.delete('photo');
     submitButton.disabled = true;
     showMessage('Envoi du signalement…');
     try {
@@ -149,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const incident = await readResponse(response);
       form.reset();
+      photo = null;
       form.classList.remove('was-validated');
       photoPreview.hidden = true;
       photoPreview.replaceChildren();

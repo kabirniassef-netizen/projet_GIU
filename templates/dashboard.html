@@ -105,7 +105,7 @@
             <div class="col-md-4"><label class="form-label" for="incidentRegion">Région</label><select class="form-select" id="incidentRegion" name="region" required></select></div>
             <div class="col-md-4"><label class="form-label" for="incidentDepartment">Département</label><select class="form-select" id="incidentDepartment" name="department" required></select></div>
             <div class="col-md-4"><label class="form-label" for="incidentCommune">Commune</label><select class="form-select" id="incidentCommune" name="commune" required></select></div>
-            <div class="col-12"><label class="form-label" for="incidentPhoto">Photo (facultative, 5 Mio maximum)</label><input class="form-control" id="incidentPhoto" type="file" name="photo" accept="image/*" capture="environment"><div class="photo-preview" id="incidentPhotoPreview" hidden></div></div>
+            <div class="col-12"><label class="form-label" for="incidentPhoto">Photo (facultative, 5 Mio maximum)</label><input class="form-control" id="incidentPhoto" type="file" name="photo" accept="image/*"><div class="photo-preview" id="incidentPhotoPreview" hidden></div></div>
           </div>
           <div id="incidentMessage" class="small mt-3" role="status" aria-live="polite"></div>
         </div>
@@ -124,6 +124,7 @@
   <script src="{% static 'js/api.js' %}"></script>
   <script src="{% static 'js/ui.js' %}"></script>
   <script src="{% static 'js/senegal-geo.js' %}"></script>
+  <script src="{% static 'js/photo-resize.js' %}"></script>
   <script src="{% static 'js/dashboard-app.js' %}"></script>
 </body>
 </html>
