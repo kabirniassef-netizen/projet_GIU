@@ -102,6 +102,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'config.context_processors.chatbot',
             ],
         },
     },
@@ -212,12 +213,19 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '20/hour',
         'login': os.getenv('LOGIN_THROTTLE_RATE', '20/minute'),
+        'chatbot': os.getenv('CHATBOT_THROTTLE_RATE', '300/hour'),
     },
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
 }
+
+# Chatbot (Typebot auto-hébergé ou n8n) : clé envoyée dans l'en-tête X-Chatbot-Key pour obtenir
+# un quota dédié, et bulle de discussion Typebot affichée sur les pages publiques.
+CHATBOT_API_KEY = os.getenv('CHATBOT_API_KEY', '')
+TYPEBOT_ID = os.getenv('TYPEBOT_ID', '')
+TYPEBOT_API_HOST = os.getenv('TYPEBOT_API_HOST', '')
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = env_list(

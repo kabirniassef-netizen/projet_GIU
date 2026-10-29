@@ -54,7 +54,8 @@ class ProjectBootstrapTests(TestCase):
         self.assertNotContains(home, '/dashboard/')
         self.assertNotContains(home, 'href="/admin/"')
         self.assertNotContains(home, 'href="/api/"')
-        self.assertNotContains(home, 'href="/login/"')
+        # Seul le lien discret « Espace agents » du pied de page mène à la connexion.
+        self.assertContains(home, 'href="/login/"', count=1)
         self.assertNotContains(home, 'id="modules"')
 
     def test_citizen_reporting_links_open_the_form_with_photo_upload(self):
@@ -77,7 +78,7 @@ class ProjectBootstrapTests(TestCase):
         self.assertNotContains(public_report, 'reporter_phone')
         self.assertNotContains(public_report, 'reporter_name')
         self.assertNotContains(public_report, 'Vos coordonnées')
-        self.assertNotContains(public_report, 'id="incidentAddress"')
+        self.assertContains(public_report, 'id="incidentAddress"')
         self.assertContains(public_report, 'id="incidentRegion"')
         self.assertContains(public_report, 'id="incidentDepartment"')
         self.assertContains(public_report, 'id="incidentCommune"')

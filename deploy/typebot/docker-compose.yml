@@ -1,0 +1,48 @@
+# Typebot open source auto-hébergé : éditeur (builder), lecteur (viewer) et sa base.
+# Lancement : copier .env.example en .env, le compléter, puis `docker compose up -d`.
+# Remplacer `latest` par une version précise avant une mise en production.
+volumes:
+  typebot-db-data:
+
+services:
+  typebot-db:
+    image: postgres:16
+    restart: always
+    volumes:
+      - typebot-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: typebot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d typebot']
+      interval: 5s
+      retries: 10
+
+  typebot-builder:
+    image: baptistearno/typebot-builder:latest
+    restart: always
+    depends_on:
+      typebot-db:
+        condition: service_healthy
+    ports:
+      - '8080:3000'
+    # « Test the request » s'exécute dans le builder, il doit lui aussi joindre Django.
+    extra_hosts:
+      - 'giu-api:192.168.65.254'
+    env_file: .env
+
+  typebot-viewer:
+    image: baptistearno/typebot-viewer:latest
+    restart: always
+    depends_on:
+      typebot-db:
+        condition: service_healthy
+    ports:
+      - '8081:3000'
+    # Les blocs HTTP request s'exécutent dans le viewer : giu-api désigne le Django
+    # lancé sur la machine (port 8000). On fixe l'IPv4 de l'hôte Docker Desktop
+    # (celle de host.docker.internal) : SSRF_ALLOWED_HOSTS peut l'autoriser, alors
+    # que Typebot refuse toujours l'IPv6 privée que donnerait host-gateway.
+    extra_hosts:
+      - 'giu-api:192.168.65.254'
+    env_file: .env

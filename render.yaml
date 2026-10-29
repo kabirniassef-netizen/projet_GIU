@@ -34,6 +34,13 @@ services:
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false
+      # Chatbot Typebot (voir docs/chatbot-typebot.md).
+      - key: TYPEBOT_ID
+        sync: false
+      - key: TYPEBOT_API_HOST
+        sync: false
+      - key: CHATBOT_API_KEY
+        sync: false
 
 databases:
   - name: giu-database
