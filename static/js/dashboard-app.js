@@ -765,7 +765,7 @@
   }
 
   async function completeIntervention(item) {
-    const photo = h('input', { class: 'form-control', type: 'file', name: 'photo', accept: 'image/*', capture: 'environment' });
+    const photo = h('input', { class: 'form-control', type: 'file', name: 'photo', accept: 'image/*' });
     const done = await formDialog({
       title: 'Clôturer l’intervention',
       tone: 'success',
@@ -774,7 +774,7 @@
         h('p', { class: 'col-12 mb-0 text-secondary' }, item.incident_title),
         field('Compte rendu', textarea('comment', { rows: 3, required: true, placeholder: 'Travaux réalisés, pièces remplacées, observations…' })),
         field('Photo après intervention (facultative)', photo)),
-      onSubmit: data => api.updateInterventionStatus(item.id, 'completed', data.get('comment'), photo.files[0] || null),
+      onSubmit: async data => api.updateInterventionStatus(item.id, 'completed', data.get('comment'), (await preparePhoto(photo.files[0])) || null),
     });
     if (done) {
       toast('Intervention clôturée : l’incident est résolu.');
@@ -1319,15 +1319,20 @@
   document.getElementById('showIncidentFormButton').addEventListener('click', openReportModal);
   reportModalElement.addEventListener('shown.bs.modal', () => document.getElementById('incidentTitle').focus());
 
-  photoInput.addEventListener('change', () => {
-    const file = photoInput.files[0];
+  let reportPhoto = null;
+  photoInput.addEventListener('change', async () => {
+    reportPhoto = null;
     photoPreview.replaceChildren();
-    photoPreview.hidden = !file;
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
+    photoPreview.hidden = !photoInput.files[0];
+    if (!photoInput.files[0]) return;
+    photoPreview.textContent = 'Préparation de la photo…';
+    const file = await preparePhoto(photoInput.files[0]);
+    photoPreview.replaceChildren();
+    if (file.size > MAX_PHOTO_SIZE) {
       photoPreview.append(h('span', { class: 'text-danger small' }, 'La photo dépasse 5 Mio : choisissez une image plus légère.'));
       return;
     }
+    reportPhoto = file;
     const url = URL.createObjectURL(file);
     photoPreview.append(h('img', { src: url, alt: 'Aperçu de la photo', onload: () => URL.revokeObjectURL(url) }),
       h('div', { class: 'small' }, h('strong', { class: 'd-block' }, file.name), `${(file.size / 1024 / 1024).toFixed(1).replace('.', ',')} Mio`,
@@ -1356,15 +1361,15 @@
       reportForm.classList.add('was-validated');
       return;
     }
-    const photo = photoInput.files[0];
-    if (photo && photo.size > 5 * 1024 * 1024) {
+    if (photoInput.files[0] && !reportPhoto) {
       reportMessage.className = 'small mt-3 text-danger';
       reportMessage.textContent = 'La photo ne doit pas dépasser 5 Mio.';
       return;
     }
     const formData = new FormData(reportForm);
     ['title', 'description', 'address', 'region', 'department', 'commune'].forEach(name => formData.set(name, (formData.get(name) || '').trim()));
-    if (!photo) formData.delete('photo');
+    if (reportPhoto) formData.set('photo', reportPhoto, reportPhoto.name);
+    else formData.delete('photo');
     const submit = reportForm.querySelector('button[type="submit"]');
     setBusy(submit, true);
     reportMessage.textContent = '';
@@ -1372,6 +1377,7 @@
       const created = await api.createIncident(formData);
       reportModal.hide();
       reportForm.reset();
+      reportPhoto = null;
       reportForm.classList.remove('was-validated');
       photoPreview.hidden = true;
       toast(`Signalement envoyé. Code de suivi : ${created.tracking_code}`, 'success', {
