@@ -1,0 +1,24 @@
+{% load static %}{% if typebot_config %}
+  {{ typebot_config|json_script:"typebot-config" }}
+  <link rel="preconnect" href="{{ typebot_config.apiHost }}" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+  <div class="giu-chatbot" data-state="closed">
+    <p class="giu-chatbot-hint" id="giu-chatbot-hint" hidden>
+      <button type="button" class="giu-chatbot-hint-open">Besoin d’aide pour signaler ou suivre un incident&nbsp;?</button>
+      <button type="button" class="giu-chatbot-hint-close" aria-label="Masquer ce message">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </p>
+    <button type="button" class="giu-chatbot-launcher" aria-expanded="false" aria-label="Ouvrir l’assistant de signalement">
+      {# Bulle de dialogue avec un repère de lieu : « parler d'un endroit » #}
+      <svg class="giu-chatbot-icon giu-chatbot-icon-open" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.5c4.97 0 9 3.36 9 7.5s-4.03 7.5-9 7.5c-.98 0-1.92-.13-2.8-.37L4.5 20l1.02-3.6C4.08 15.07 3 13.13 3 11c0-4.14 4.03-7.5 9-7.5z"/>
+        <path class="giu-chatbot-pin" d="M12 14.6s-2.6-2.4-2.6-4.3a2.6 2.6 0 015.2 0c0 1.9-2.6 4.3-2.6 4.3z"/>
+      </svg>
+      <svg class="giu-chatbot-icon giu-chatbot-icon-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      <span class="giu-chatbot-spinner" aria-hidden="true"></span>
+    </button>
+    <span class="visually-hidden" role="status" aria-live="polite" id="giu-chatbot-status"></span>
+  </div>
+  <script src="{% static 'js/chatbot.js' %}" defer></script>
+{% endif %}

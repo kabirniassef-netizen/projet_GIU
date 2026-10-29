@@ -9,9 +9,9 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from .models import IncidentCategory, Incident, IncidentUpdate
+from .throttling import PublicIncidentRateThrottle
 from .serializers import (
     IncidentCategorySerializer, IncidentListSerializer, IncidentDetailSerializer,
     IncidentCreateSerializer, IncidentManageSerializer,
@@ -73,7 +73,7 @@ class PublicIncidentCreateView(APIView):
     # imposer le jeton CSRF que la page publique n'envoie pas.
     authentication_classes = []
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [PublicIncidentRateThrottle]
 
     def post(self, request):
         serializer = PublicIncidentCreateSerializer(data=request.data)
@@ -93,7 +93,7 @@ class PublicIncidentCreateView(APIView):
 class PublicIncidentTrackingView(APIView):
     """Suivi d'un signalement à partir de son code, sans authentification."""
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [PublicIncidentRateThrottle]
 
     def get(self, request, tracking_code):
         incident = get_object_or_404(

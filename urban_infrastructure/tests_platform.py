@@ -2,6 +2,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
@@ -157,6 +158,18 @@ class IncidentFeatureTests(PlatformTestCase):
         self.assertNotIn('description', data)
         self.assertEqual(APIClient().get('/api/incidents/track/GIU-INCONNU0/').status_code, 404)
         self.assertEqual(self.client.get(f'/suivi/?code={code}').status_code, 200)
+
+    @override_settings(CHATBOT_API_KEY='cle-du-bot')
+    def test_chatbot_key_gets_its_own_quota(self):
+        cache.clear()
+        bot = APIClient(HTTP_X_CHATBOT_KEY='cle-du-bot')
+        for _ in range(25):
+            self.assertEqual(bot.get('/api/incidents/track/GIU-INCONNU0/').status_code, 404)
+
+        wrong_key = APIClient(HTTP_X_CHATBOT_KEY='mauvaise-cle')
+        statuses = [wrong_key.get('/api/incidents/track/GIU-INCONNU0/').status_code for _ in range(21)]
+        self.assertEqual(statuses[-1], 429)
+        cache.clear()
 
     def test_incident_list_filters_and_search(self):
         self.create_incident(title='Lampadaire éteint', priority='urgent')
@@ -339,3 +352,20 @@ class PageTests(TestCase):
     @override_settings(SHOW_DEMO_ACCOUNTS=True)
     def test_login_page_can_show_demo_accounts(self):
         self.assertContains(self.client.get('/login/'), 'admin123')
+
+    @override_settings(TYPEBOT_ID='')
+    def test_typebot_bubble_hidden_without_configuration(self):
+        self.assertNotContains(self.client.get('/signaler/'), 'typebot-config')
+
+    @override_settings(TYPEBOT_ID='giu-signalements', TYPEBOT_API_HOST='')
+    def test_typebot_bubble_requires_self_hosted_viewer(self):
+        self.assertNotContains(self.client.get('/signaler/'), 'typebot-config')
+
+    @override_settings(TYPEBOT_ID='giu-signalements', TYPEBOT_API_HOST='https://bot.example.org')
+    def test_typebot_bubble_shown_on_public_pages(self):
+        for url in ['/', '/signaler/', '/suivi/']:
+            response = self.client.get(url)
+            self.assertContains(response, '"typebot": "giu-signalements"')
+            self.assertContains(response, '"apiHost": "https://bot.example.org"')
+            self.assertContains(response, 'class="giu-chatbot-launcher" aria-expanded="false"')
+            self.assertContains(response, 'js/chatbot.js')

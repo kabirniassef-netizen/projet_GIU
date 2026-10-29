@@ -100,5 +100,6 @@
   {% if not citizen_only %}
   <script>document.addEventListener('DOMContentLoaded', async () => { try { const stats = await apiClient.getGlobalStatistics(); const pending = stats.total_interventions - stats.completed_interventions; document.getElementById('total-incidents').textContent = stats.total_incidents; document.getElementById('total-incidents-mobile').textContent = stats.total_incidents; document.getElementById('resolved-incidents').textContent = stats.resolved_incidents; document.getElementById('pending-interventions').textContent = pending; document.getElementById('pending-interventions-mobile').textContent = pending; document.getElementById('asset-availability').textContent = stats.asset_availability_rate.toFixed(1); } catch (error) { console.log('Impossible de charger les statistiques (authentification requise)'); } });</script>
   {% endif %}
+  {% include 'partials/typebot_bubble.html' %}
 </body>
 </html>
