@@ -29,3 +29,25 @@ async function preparePhoto(file) {
   } catch (error) { /* format non lisible par le navigateur : on garde l'original */ }
   return file;
 }
+
+// Bouton « Prendre une photo » (data-camera-for="id du champ photo") : affiché sur les écrans tactiles,
+// il ouvre directement l'appareil photo et place le cliché dans le champ photo habituel.
+document.addEventListener('DOMContentLoaded', () => {
+  if (!window.matchMedia('(pointer: coarse)').matches || typeof DataTransfer === 'undefined') return;
+  document.querySelectorAll('[data-camera-for]').forEach(button => {
+    const photoInput = document.getElementById(button.dataset.cameraFor);
+    const camera = Object.assign(document.createElement('input'), { type: 'file', accept: 'image/*', hidden: true });
+    camera.setAttribute('capture', 'environment');
+    button.after(camera);
+    button.hidden = false;
+    button.addEventListener('click', () => camera.click());
+    camera.addEventListener('change', () => {
+      if (!camera.files[0]) return;
+      const transfer = new DataTransfer();
+      transfer.items.add(camera.files[0]);
+      photoInput.files = transfer.files;
+      camera.value = '';
+      photoInput.dispatchEvent(new Event('change'));
+    });
+  });
+});
