@@ -30,9 +30,11 @@ class IncidentCategory(models.Model):
     BREAKDOWN = 'panne'
     POOR_VISIBILITY = 'mauvaise_visibilite'
     ACCIDENT = 'accident'
-    
+    FLOOD = 'inondation'
+    ENVIRONMENT = 'environnement'
+
     CATEGORY_CHOICES = [
-        (LIGHTING, 'Éclairage Public'),
+        (LIGHTING, 'Lampadaire / Éclairage public'),
         (ROAD, 'Voirie'),
         (WASTE, 'Déchets'),
         (SIGNAL, 'Signalisation'),
@@ -45,6 +47,8 @@ class IncidentCategory(models.Model):
         (BREAKDOWN, 'Panne'),
         (POOR_VISIBILITY, 'Mauvaise visibilité'),
         (ACCIDENT, 'Accident de la route'),
+        (FLOOD, 'Inondation'),
+        (ENVIRONMENT, 'Environnement'),
     ]
     
     name = models.CharField(max_length=100, unique=True, choices=CATEGORY_CHOICES)
