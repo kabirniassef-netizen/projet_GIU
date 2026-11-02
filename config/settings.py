@@ -172,9 +172,10 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 SERVE_MEDIA = env_bool('SERVE_MEDIA', False)
-# Le disque de Render gratuit est effacé à chaque redémarrage : avec CLOUDINARY_URL
-# (cloudinary://clé:secret@nom), les photos sont stockées chez Cloudinary.
-CLOUDINARY_URL = os.getenv('CLOUDINARY_URL', '')
+# Le disque de Render gratuit est effacé à chaque redémarrage : avec SUPABASE_PROJECT_ID
+# et les clés S3 du projet, les photos sont stockées dans un bucket public Supabase.
+SUPABASE_PROJECT_ID = os.getenv('SUPABASE_PROJECT_ID', '')
+SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'photos')
 # Affiche les comptes de démonstration sur la page de connexion (jamais par défaut en production).
 SHOW_DEMO_ACCOUNTS = env_bool('SHOW_DEMO_ACCOUNTS', DEBUG)
 
@@ -253,14 +254,36 @@ if not DEBUG:
     STORAGES = {
         # Sans « default », Django ne peut pas enregistrer les photos envoyées.
         'default': {
-            'BACKEND': (
-                'cloudinary_storage.storage.MediaCloudinaryStorage'
-                if CLOUDINARY_URL
-                else 'django.core.files.storage.FileSystemStorage'
-            ),
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
         },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
+    if SUPABASE_PROJECT_ID:
+        from botocore.config import Config as BotoConfig
+
+        _supabase_host = f'{SUPABASE_PROJECT_ID}.supabase.co'
+        STORAGES['default'] = {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'endpoint_url': f'https://{_supabase_host}/storage/v1/s3',
+                'region_name': os.getenv('SUPABASE_S3_REGION', ''),
+                'access_key': os.getenv('SUPABASE_S3_ACCESS_KEY_ID', ''),
+                'secret_key': os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY', ''),
+                'bucket_name': SUPABASE_BUCKET,
+                # Bucket public : liens directs, sans signature qui expire.
+                'custom_domain': f'{_supabase_host}/storage/v1/object/public/{SUPABASE_BUCKET}',
+                'querystring_auth': False,
+                'file_overwrite': False,
+                # Les sommes de contrôle ajoutées par défaut depuis boto3 1.36
+                # ne sont pas acceptées par tous les services compatibles S3.
+                'client_config': BotoConfig(
+                    signature_version='s3v4',
+                    s3={'addressing_style': 'path'},
+                    request_checksum_calculation='when_required',
+                    response_checksum_validation='when_required',
+                ),
+            },
+        }
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
