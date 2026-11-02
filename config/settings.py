@@ -172,10 +172,10 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 SERVE_MEDIA = env_bool('SERVE_MEDIA', False)
-# Le disque de Render gratuit est effacé à chaque redémarrage : avec SUPABASE_PROJECT_ID
-# et les clés S3 du projet, les photos sont stockées dans un bucket public Supabase.
-SUPABASE_PROJECT_ID = os.getenv('SUPABASE_PROJECT_ID', '')
-SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'photos')
+# Le disque de Render gratuit est effacé à chaque redémarrage : avec MEDIA_S3_ENDPOINT_URL
+# (Neon Object Storage ou tout service compatible S3), les photos sont stockées dans
+# un bucket privé et affichées par des liens signés temporaires.
+MEDIA_S3_ENDPOINT_URL = os.getenv('MEDIA_S3_ENDPOINT_URL', '')
 # Affiche les comptes de démonstration sur la page de connexion (jamais par défaut en production).
 SHOW_DEMO_ACCOUNTS = env_bool('SHOW_DEMO_ACCOUNTS', DEBUG)
 
@@ -260,21 +260,20 @@ if not DEBUG:
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
-    if SUPABASE_PROJECT_ID:
+    if MEDIA_S3_ENDPOINT_URL:
         from botocore.config import Config as BotoConfig
 
-        _supabase_host = f'{SUPABASE_PROJECT_ID}.supabase.co'
         STORAGES['default'] = {
             'BACKEND': 'storages.backends.s3.S3Storage',
             'OPTIONS': {
-                'endpoint_url': f'https://{_supabase_host}/storage/v1/s3',
-                'region_name': os.getenv('SUPABASE_S3_REGION', ''),
-                'access_key': os.getenv('SUPABASE_S3_ACCESS_KEY_ID', ''),
-                'secret_key': os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY', ''),
-                'bucket_name': SUPABASE_BUCKET,
-                # Bucket public : liens directs, sans signature qui expire.
-                'custom_domain': f'{_supabase_host}/storage/v1/object/public/{SUPABASE_BUCKET}',
-                'querystring_auth': False,
+                'endpoint_url': MEDIA_S3_ENDPOINT_URL,
+                'region_name': os.getenv('MEDIA_S3_REGION', ''),
+                'access_key': os.getenv('MEDIA_S3_ACCESS_KEY_ID', ''),
+                'secret_key': os.getenv('MEDIA_S3_SECRET_ACCESS_KEY', ''),
+                'bucket_name': os.getenv('MEDIA_S3_BUCKET', 'photos'),
+                # Liens signés valables 24 h, recalculés à chaque réponse de l'API.
+                'querystring_auth': True,
+                'querystring_expire': 24 * 3600,
                 'file_overwrite': False,
                 # Les sommes de contrôle ajoutées par défaut depuis boto3 1.36
                 # ne sont pas acceptées par tous les services compatibles S3.
