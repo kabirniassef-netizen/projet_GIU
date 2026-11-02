@@ -31,6 +31,11 @@ def env_bool(name, default=False):
     return os.getenv(name, str(default)).lower() in {'1', 'true', 'yes', 'on'}
 
 
+def env_clean(name, default=''):
+    """Valeur sans espaces ni guillemets parasites (copiés depuis un fichier .env)."""
+    return os.getenv(name, default).strip().strip('"\'').strip()
+
+
 def env_list(name, default=''):
     return [value.strip() for value in os.getenv(name, default).split(',') if value.strip()]
 
@@ -175,7 +180,7 @@ SERVE_MEDIA = env_bool('SERVE_MEDIA', False)
 # Le disque de Render gratuit est effacé à chaque redémarrage : avec MEDIA_S3_ENDPOINT_URL
 # (Neon Object Storage ou tout service compatible S3), les photos sont stockées dans
 # un bucket privé et affichées par des liens signés temporaires.
-MEDIA_S3_ENDPOINT_URL = os.getenv('MEDIA_S3_ENDPOINT_URL', '')
+MEDIA_S3_ENDPOINT_URL = env_clean('MEDIA_S3_ENDPOINT_URL')
 # Affiche les comptes de démonstration sur la page de connexion (jamais par défaut en production).
 SHOW_DEMO_ACCOUNTS = env_bool('SHOW_DEMO_ACCOUNTS', DEBUG)
 
@@ -267,10 +272,10 @@ if not DEBUG:
             'BACKEND': 'storages.backends.s3.S3Storage',
             'OPTIONS': {
                 'endpoint_url': MEDIA_S3_ENDPOINT_URL,
-                'region_name': os.getenv('MEDIA_S3_REGION', ''),
-                'access_key': os.getenv('MEDIA_S3_ACCESS_KEY_ID', ''),
-                'secret_key': os.getenv('MEDIA_S3_SECRET_ACCESS_KEY', ''),
-                'bucket_name': os.getenv('MEDIA_S3_BUCKET', 'photos'),
+                'region_name': env_clean('MEDIA_S3_REGION'),
+                'access_key': env_clean('MEDIA_S3_ACCESS_KEY_ID'),
+                'secret_key': env_clean('MEDIA_S3_SECRET_ACCESS_KEY'),
+                'bucket_name': env_clean('MEDIA_S3_BUCKET', 'photos'),
                 # Liens signés valables 24 h, recalculés à chaque réponse de l'API.
                 'querystring_auth': True,
                 'querystring_expire': 24 * 3600,
@@ -286,3 +291,20 @@ if not DEBUG:
             },
         }
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Affiche les erreurs (traces comprises) dans la console, donc dans les logs de Render :
+# sans DEBUG, Django ne les envoie par défaut qu'aux ADMINS par e-mail.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False},
+    },
+}
