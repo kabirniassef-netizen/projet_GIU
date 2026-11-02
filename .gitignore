@@ -9,4 +9,5 @@ venv/
 db.sqlite3
 media/
 staticfiles/
-backups//projet_GIU/
+backups/
+/projet_GIU/
