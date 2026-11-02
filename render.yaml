@@ -23,6 +23,9 @@ services:
           property: connectionString
       - key: SERVE_MEDIA
         value: "True"
+      # Stockage des photos chez Cloudinary (le disque de Render gratuit est effacé à chaque redémarrage).
+      - key: CLOUDINARY_URL
+        sync: false
       - key: SECURE_SSL_REDIRECT
         value: "True"
       - key: SESSION_COOKIE_SECURE

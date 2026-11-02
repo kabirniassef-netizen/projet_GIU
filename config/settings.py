@@ -172,6 +172,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 SERVE_MEDIA = env_bool('SERVE_MEDIA', False)
+# Le disque de Render gratuit est effacé à chaque redémarrage : avec CLOUDINARY_URL
+# (cloudinary://clé:secret@nom), les photos sont stockées chez Cloudinary.
+CLOUDINARY_URL = os.getenv('CLOUDINARY_URL', '')
 # Affiche les comptes de démonstration sur la page de connexion (jamais par défaut en production).
 SHOW_DEMO_ACCOUNTS = env_bool('SHOW_DEMO_ACCOUNTS', DEBUG)
 
@@ -250,7 +253,11 @@ if not DEBUG:
     STORAGES = {
         # Sans « default », Django ne peut pas enregistrer les photos envoyées.
         'default': {
-            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+            'BACKEND': (
+                'cloudinary_storage.storage.MediaCloudinaryStorage'
+                if CLOUDINARY_URL
+                else 'django.core.files.storage.FileSystemStorage'
+            ),
         },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
