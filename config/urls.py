@@ -2,6 +2,7 @@
 URL configuration for urban_infrastructure project.
 """
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
@@ -19,6 +20,9 @@ from urban_infrastructure.users.views import login_view, logout_view
 
 urlpatterns = [
     path('', HomePageView.as_view(), name='home'),
+    # Ping sans accès à la base : garde le service Render gratuit éveillé
+    # (voir .github/workflows/keep-alive.yml) sans réveiller Neon.
+    path('health/', lambda request: HttpResponse('ok', content_type='text/plain'), name='health'),
     path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'favicon.svg', permanent=True)),
     path('login/', LoginPageView.as_view(), name='login'),
     path('login.html', LoginPageView.as_view(), name='login_html'),

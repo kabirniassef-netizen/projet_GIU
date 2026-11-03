@@ -1,0 +1,16 @@
+# Render (offre gratuite) met le site en veille après 15 min sans visite :
+# la visite suivante attend alors ~1 min le redémarrage. Ce ping régulier
+# le garde éveillé pour que le lien s'ouvre directement.
+name: Garder le site éveillé
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health/
+        run: curl -fsS --retry 3 --retry-delay 20 --max-time 120 https://giu-signalements.onrender.com/health/
