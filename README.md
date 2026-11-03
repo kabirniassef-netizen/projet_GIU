@@ -90,39 +90,46 @@ exemplaire par événement.
 
 ### Mise en ligne sur Render
 
-Le fichier `render.yaml` décrit une démonstration utilisant les offres gratuites
-Render pour le service Django et PostgreSQL. Cette configuration est faite pour
-tester et présenter l'application, pas pour conserver des signalements réels.
-Render met le service web en veille après 15 minutes sans trafic; le premier
-chargement suivant peut donc être lent. Son système de fichiers est éphémère:
-les photos téléversées peuvent disparaître au redémarrage ou au redéploiement.
-La base PostgreSQL gratuite expire après 30 jours; après la période de grâce
-de Render, ses données sont supprimées si elle n'a pas été mise à niveau.
-Vérifiez les conditions et les tarifs affichés par Render au moment du
-déploiement.
+L'application est en ligne sur https://giu-signalements.onrender.com, décrite
+par `render.yaml`. Elle s'appuie uniquement sur des offres gratuites :
 
-1. Publiez le dépôt sur GitHub et connectez-le à votre compte Render.
-2. Dans Render, choisissez **New > Blueprint**, sélectionnez ce dépôt et
-   confirmez que le service web et PostgreSQL sont bien configurés sur l'offre
-   gratuite avant de créer les ressources.
-3. Une fois le service prêt, créez un administrateur avec
-   `python manage.py createsuperuser` dans le Shell du service Render.
-4. Testez l'inscription citoyen et l'envoi d'un signalement depuis un téléphone.
-5. Configurez SMTP séparément si les courriels doivent être remis aux
-   destinataires.
+| Élément | Service | Variables à renseigner dans Render |
+|---|---|---|
+| Application Django (gunicorn) | Render, service web gratuit (Francfort) | `SECRET_KEY` (générée), `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` |
+| Base PostgreSQL | Neon (gratuit, sans expiration) | `DATABASE_URL` (chaîne de connexion « pooled ») |
+| Photos des signalements | Neon Object Storage (compatible S3, bucket privé `photos`) | `MEDIA_S3_ENDPOINT_URL`, `MEDIA_S3_REGION`, `MEDIA_S3_ACCESS_KEY_ID`, `MEDIA_S3_SECRET_ACCESS_KEY` |
+| E-mails de notification | API Brevo | `BREVO_API_KEY`, `DEFAULT_FROM_EMAIL` |
+| Chatbot (facultatif) | Typebot auto-hébergé, voir [docs/chatbot-typebot.md](docs/chatbot-typebot.md) | `TYPEBOT_ID`, `TYPEBOT_API_HOST`, `CHATBOT_API_KEY` |
 
-Le Blueprint ne charge pas de comptes ou de données de démonstration. Le
-déploiement automatique est désactivé; publiez explicitement les changements
-après vérification. Les migrations sont lancées au démarrage du service. L'adresse initiale sera
-`https://giu-signalements.onrender.com`; un domaine personnalisé pourra être
-ajouté ensuite dans Render et dans `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`.
-Les avertissements HSTS sur les sous-domaines et le preload restent à évaluer
-après le choix du domaine; ne les activez pas à l'aveugle.
+Les variables doivent être ajoutées **sur le service web lui-même** (onglet
+Environment), pas seulement dans un Environment Group non relié.
+
+Points à connaître :
+
+- **Déploiement manuel** : `autoDeploy` est désactivé. Après un `git push` sur
+  `main`, lancez **Manual Deploy > Deploy latest commit** dans Render.
+- **Démarrage** : chaque démarrage applique les migrations puis lance
+  `ensure_admin`, qui crée le compte `admin` (mot de passe initial `admin123`)
+  uniquement si la base ne contient encore aucun administrateur. Changez ce
+  mot de passe immédiatement.
+- **Mise en veille** : Render endort le service gratuit après 15 minutes sans
+  trafic (environ 1 minute d'attente au réveil). Le workflow
+  [.github/workflows/keep-alive.yml](.github/workflows/keep-alive.yml) appelle
+  `/health/` toutes les 10 minutes pour l'en empêcher. Cette route ne touche
+  pas la base, ce qui laisse Neon se mettre en veille et préserve son quota.
+- **Disque éphémère** : le disque de Render est effacé à chaque redémarrage ;
+  c'est pourquoi les photos sont stockées chez Neon et non sur le serveur.
+- **Erreurs** : les erreurs serveur (500) sont écrites dans l'onglet Logs du
+  service Render.
+
+Un domaine personnalisé peut être ajouté ensuite dans Render et dans
+`ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`. Les réglages HSTS sur les
+sous-domaines et le preload restent à évaluer après le choix du domaine.
 
 ### Stack Technique
 - **Backend**: Django 6.0.6
 - **API**: Django REST Framework 3.17
-- **Base de données**: SQLite en développement, PostgreSQL configurable pour la production
+- **Base de données**: SQLite en développement, PostgreSQL (Neon) en production
 - **Frontend**: HTML5/CSS3/JavaScript vanilla
 - **Authentification**: Token-based + Session
 
@@ -373,11 +380,14 @@ python manage.py runserver
 
 ## 🚀 Déploiement
 
-La mise en production n'est pas encore réalisée. Il faut choisir un hébergeur,
-générer une clé secrète dédiée, configurer `DEBUG=False`, `ALLOWED_HOSTS`,
-PostgreSQL, CORS/CSRF, SMTP, HTTPS, un serveur WSGI et un reverse proxy. Les
-contrôles Django se lancent avec `python manage.py check --deploy`; les erreurs
-et avertissements doivent être traités avant la mise en ligne.
+L'application est déployée sur Render : voir
+[Mise en ligne sur Render](#mise-en-ligne-sur-render). Avant chaque mise en
+ligne, lancez les tests et `python manage.py check --deploy` (avec la
+configuration de production dans `.env`).
+
+Reste à faire : héberger Typebot sur un VPS pour activer le chatbot en
+production (Render gratuit ne convient pas, voir
+[docs/chatbot-typebot.md](docs/chatbot-typebot.md)).
 
 ## 📝 Notes de Développement
 
@@ -411,9 +421,9 @@ Propriété de la municipalité. Tous droits réservés.
 ---
 
 **Version:** 1.0.0  
-**Dernière mise à jour:** 2026-06-30  
+**Dernière mise à jour:** 2026-11-03  
 **Framework:** Django 6.0.6  
-**État:** environnement local et tests prêts après configuration; déploiement de production restant à réaliser.
+**État:** en production sur Render (base et photos chez Neon) ; chatbot Typebot pas encore hébergé en production.
 
 ## Espace de travail (v2)
 

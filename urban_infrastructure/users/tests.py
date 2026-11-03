@@ -629,3 +629,25 @@ class EnsureAdminCommandTests(TestCase):
         admins = get_user_model().objects.filter(is_superuser=True)
         self.assertEqual(list(admins.values_list('username', flat=True)), ['admin'])
         self.assertTrue(admins.get().check_password('admin123'))
+
+
+class AdminUserCreationTests(TestCase):
+    def test_add_user_form_hashes_password(self):
+        User = get_user_model()
+        admin_user = User.objects.create_superuser('chef', 'chef@example.com', 'MotDePasse-123')
+        client = Client()
+        client.force_login(admin_user)
+
+        response = client.post('/admin/users/customuser/add/', {
+            'username': 'agent1',
+            'email': 'agent1@example.com',
+            'role': User._meta.get_field('role').default,
+            'password1': 'Secret-Agent-456',
+            'password2': 'Secret-Agent-456',
+            'usable_password': 'true',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        agent = User.objects.get(username='agent1')
+        self.assertNotEqual(agent.password, 'Secret-Agent-456')
+        self.assertTrue(agent.check_password('Secret-Agent-456'))
