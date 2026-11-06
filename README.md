@@ -113,9 +113,9 @@ Points à connaître :
   uniquement si la base ne contient encore aucun administrateur. Changez ce
   mot de passe immédiatement.
 - **Mise en veille** : Render endort le service gratuit après 15 minutes sans
-  trafic (environ 1 minute d'attente au réveil). Le workflow
-  [.github/workflows/keep-alive.yml](.github/workflows/keep-alive.yml) appelle
-  `/health/` toutes les 10 minutes pour l'en empêcher. Cette route ne touche
+  trafic (environ 1 minute d'attente au réveil). Une tâche [cron-job.org](https://console.cron-job.org/)
+  (`GIU keep-alive`) appelle `/health/` toutes les 10 minutes pour l'en
+  empêcher. Cette route ne touche
   pas la base, ce qui laisse Neon se mettre en veille et préserve son quota.
 - **Disque éphémère** : le disque de Render est effacé à chaque redémarrage ;
   c'est pourquoi les photos sont stockées chez Neon et non sur le serveur.

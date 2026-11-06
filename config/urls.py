@@ -21,7 +21,7 @@ from urban_infrastructure.users.views import login_view, logout_view
 urlpatterns = [
     path('', HomePageView.as_view(), name='home'),
     # Ping sans accès à la base : garde le service Render gratuit éveillé
-    # (voir .github/workflows/keep-alive.yml) sans réveiller Neon.
+    # (tâche cron-job.org « GIU keep-alive ») sans réveiller Neon.
     path('health/', lambda request: HttpResponse('ok', content_type='text/plain'), name='health'),
     path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'favicon.svg', permanent=True)),
     path('login/', LoginPageView.as_view(), name='login'),
